@@ -38,7 +38,7 @@
     rankGrid.appendChild(card);
   });
 
-  // 부서별 사직율 순위 차트 (2026 vs 2025 vs 2024)
+  // 부서별 사직율 순위 차트 (2026년만)
   const ctx = document.getElementById("rankChart").getContext("2d");
   new Chart(ctx, {
     type: "bar",
@@ -46,19 +46,10 @@
       labels: sortedDesc.map((d) => d.name),
       datasets: [
         {
-          label: "2026년",
+          label: "2026년 사직율",
           data: sortedDesc.map((d) => Number(d.rate2026.toFixed(1))),
-          backgroundColor: BRAND.primary,
-        },
-        {
-          label: "2025년",
-          data: sortedDesc.map((d) => d.rate2025),
-          backgroundColor: BRAND.magenta,
-        },
-        {
-          label: "2024년",
-          data: sortedDesc.map((d) => d.rate2024),
-          backgroundColor: "rgba(166, 174, 224, 0.35)",
+          backgroundColor: sortedDesc.map((d, i) => (i < 3 ? BRAND.magenta : BRAND.primary)),
+          borderRadius: 6,
         },
       ],
     },
@@ -67,7 +58,7 @@
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { position: "bottom", labels: { color: BRAND.muted } },
+        legend: { display: false },
         tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.parsed.x}%` } },
       },
       scales: {

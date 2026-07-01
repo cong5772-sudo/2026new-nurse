@@ -196,4 +196,185 @@
   pctCells += `<td>100.0%</td>`;
   pctRow.innerHTML = pctCells;
   periodFoot.appendChild(pctRow);
+
+  // ── 사직사유 분포 ──
+  const reasonEntries = Object.entries(RESIGNATION_REASON_COUNTS);
+  const reasonColors = [BRAND.primary, "rgba(166, 174, 224, 0.35)", BRAND.green, BRAND.link, BRAND.magenta];
+  new Chart(document.getElementById("reasonChart").getContext("2d"), {
+    type: "doughnut",
+    data: {
+      labels: reasonEntries.map(([k]) => k),
+      datasets: [
+        {
+          data: reasonEntries.map(([, v]) => v),
+          backgroundColor: reasonColors,
+          borderColor: "transparent",
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: "right", labels: { color: BRAND.muted, boxWidth: 12 } },
+        tooltip: {
+          callbacks: {
+            label: (c) => {
+              const pct = (c.parsed / totalResigned) * 100;
+              return `${c.label}: ${c.parsed}명 (${pct.toFixed(1)}%)`;
+            },
+          },
+        },
+      },
+    },
+  });
+
+  // ── 사직자 출신학교 분포 ──
+  const schoolEntries = Object.entries(RESIGNATION_SCHOOL_COUNTS);
+  new Chart(document.getElementById("schoolChart").getContext("2d"), {
+    type: "bar",
+    data: {
+      labels: schoolEntries.map(([k]) => k),
+      datasets: [
+        {
+          label: "사직인원",
+          data: schoolEntries.map(([, v]) => v),
+          backgroundColor: BRAND.primary,
+          borderRadius: 6,
+        },
+      ],
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { beginAtZero: true, ticks: { stepSize: 1, color: BRAND.muted }, grid: { color: BRAND.grid } },
+        y: { ticks: { color: BRAND.muted }, grid: { color: BRAND.grid } },
+      },
+    },
+  });
+
+  // ── AI역량검사평가 등급별 사직율 ──
+  const gradeRates = GRADE_ORDER.map((g) => {
+    const s = GRADE_STATS[g];
+    return s.assigned === 0 ? 0 : (s.resigned / s.assigned) * 100;
+  });
+  new Chart(document.getElementById("gradeChart").getContext("2d"), {
+    type: "bar",
+    data: {
+      labels: GRADE_ORDER,
+      datasets: [
+        {
+          label: "사직율",
+          data: gradeRates.map((v) => Number(v.toFixed(1))),
+          backgroundColor: BRAND.magenta,
+          borderRadius: 8,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (c) => {
+              const g = GRADE_ORDER[c.dataIndex];
+              const s = GRADE_STATS[g];
+              return `사직율 ${c.parsed.y}% (발령 ${s.assigned}명 중 사직 ${s.resigned}명)`;
+            },
+          },
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: "사직율(%)", color: BRAND.muted },
+          grid: { color: BRAND.grid },
+          ticks: { color: BRAND.muted },
+        },
+        x: { grid: { color: BRAND.grid }, ticks: { color: BRAND.muted } },
+      },
+    },
+  });
+
+  const gradeTableBody = document.querySelector("#gradeTable tbody");
+  GRADE_ORDER.forEach((g) => {
+    const s = GRADE_STATS[g];
+    const rate = s.assigned === 0 ? 0 : (s.resigned / s.assigned) * 100;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${g}</td><td>${s.assigned}명</td><td>${s.resigned}명</td><td>${rate.toFixed(1)}%</td>`;
+    gradeTableBody.appendChild(tr);
+  });
+  const gradeFoot = document.querySelector("#gradeTable tfoot");
+  Object.entries(GRADE_GROUP_STATS).forEach(([label, s]) => {
+    const rate = s.assigned === 0 ? 0 : (s.resigned / s.assigned) * 100;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td style="font-weight:700;">${label}</td><td style="font-weight:700;">${s.assigned}명</td><td style="font-weight:700;">${s.resigned}명</td><td style="font-weight:700;">${rate.toFixed(1)}%</td>`;
+    gradeFoot.appendChild(tr);
+  });
+
+  const aAbove = GRADE_GROUP_STATS["A이상 (S~A-)"];
+  const bGroup = GRADE_GROUP_STATS["B군 (B+~B-)"];
+  const aRate = (aAbove.resigned / aAbove.assigned) * 100;
+  const bRate = (bGroup.resigned / bGroup.assigned) * 100;
+  document.getElementById("gradeInsightBox").style.display = "flex";
+  document.getElementById("gradeInsightText").innerHTML = `<b>B군(B+~B-)</b> 사직율이 ${bRate.toFixed(1)}%로, <b>A등급 이상(S~A-)</b> ${aRate.toFixed(1)}%보다 높습니다.`;
+
+  // ── 석차백분율 구간별 사직율 ──
+  const percentileRates = PERCENTILE_BUCKET_LABELS.map((label) => {
+    const s = PERCENTILE_BUCKET_STATS[label];
+    return s.assigned === 0 ? 0 : (s.resigned / s.assigned) * 100;
+  });
+  new Chart(document.getElementById("percentileChart").getContext("2d"), {
+    type: "bar",
+    data: {
+      labels: PERCENTILE_BUCKET_LABELS,
+      datasets: [
+        {
+          label: "사직율",
+          data: percentileRates.map((v) => Number(v.toFixed(1))),
+          backgroundColor: BRAND.primary,
+          borderRadius: 8,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (c) => {
+              const label = PERCENTILE_BUCKET_LABELS[c.dataIndex];
+              const s = PERCENTILE_BUCKET_STATS[label];
+              return `사직율 ${c.parsed.y}% (발령 ${s.assigned}명 중 사직 ${s.resigned}명)`;
+            },
+          },
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: "사직율(%)", color: BRAND.muted },
+          grid: { color: BRAND.grid },
+          ticks: { color: BRAND.muted },
+        },
+        x: { grid: { color: BRAND.grid }, ticks: { color: BRAND.muted } },
+      },
+    },
+  });
+
+  const percentileTableBody = document.querySelector("#percentileTable tbody");
+  PERCENTILE_BUCKET_LABELS.forEach((label) => {
+    const s = PERCENTILE_BUCKET_STATS[label];
+    const rate = s.assigned === 0 ? 0 : (s.resigned / s.assigned) * 100;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${label}</td><td>${s.assigned}명</td><td>${s.resigned}명</td><td>${rate.toFixed(1)}%</td>`;
+    percentileTableBody.appendChild(tr);
+  });
 })();

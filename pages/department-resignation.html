@@ -10,7 +10,10 @@
 <body>
 
 <header class="top-nav">
-  <div class="brand">2026 신규간호사 인력 대시보드</div>
+  <div class="brand">
+    <span class="brand-org">해운대백병원 간호교육팀</span>
+    <span class="brand-title">신규간호사 인력관리 대시보드</span>
+  </div>
   <nav class="tabs">
     <a href="../index.html">① 발령 현황</a>
     <a href="resignation-analysis.html">② 사직 분석</a>
@@ -25,11 +28,11 @@
   <section class="rank-grid" id="rankGrid"></section>
 
   <section class="panel" style="margin-bottom: 32px;">
-    <h2>부서별 사직율 순위 (2026년 vs 2025년 vs 2024년)</h2>
-    <div class="chart-wrap" id="rankChartWrap" style="height: 640px;">
+    <h2>부서별 사직율 순위 (2026년)</h2>
+    <div class="chart-wrap" id="rankChartWrap" style="height: 560px;">
       <canvas id="rankChart"></canvas>
     </div>
-    <p class="legend-note">2026년 사직율 기준 내림차순 정렬 (누적 발령·사직 인원 기준, 6A 등 발령 실적이 없는 부서는 제외)</p>
+    <p class="legend-note">2026년 누적 사직율 기준 내림차순 정렬 (6A 등 발령 실적이 없는 부서는 제외). 2025년·2024년 비교는 아래 상세 표를 참고하세요.</p>
   </section>
 
   <section class="panel dept-table-section">

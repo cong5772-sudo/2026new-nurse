@@ -81,6 +81,60 @@ const RESIGNATION_PERIOD_BY_DATE = [
   [0, 0, 0, 0, 0, 0], // 2026-07-01
 ];
 
+// ── 사직 상세 분석 (시트[26신규명단] 원본 기준, 사직자 20명 다각적 요인) ──
+
+// 사직사유 분포
+const RESIGNATION_REASON_COUNTS = {
+  "기타": 7,
+  "(미기재)": 10,
+  "학업": 1,
+  "건강,기타": 1,
+  "이직": 1,
+};
+
+// 사직자 출신학교 분포 (2건 이상만 개별 표시, 1건은 기타로 묶음)
+const RESIGNATION_SCHOOL_COUNTS = {
+  "인제대학교": 3,
+  "대동대학교": 2,
+  "동서대학교": 2,
+  "동의대학교": 2,
+  "춘해보건대학교": 2,
+  "동의과학대학교": 2,
+  "기타(1건씩 7개교)": 7,
+};
+
+// AI역량검사평가 등급별 발령/사직 인원 (전체 151명 기준)
+const GRADE_ORDER = ["S", "A+", "A", "A-", "B+", "B", "B-"];
+const GRADE_STATS = {
+  "S": { assigned: 10, resigned: 1 },
+  "A+": { assigned: 27, resigned: 2 },
+  "A": { assigned: 46, resigned: 5 },
+  "A-": { assigned: 28, resigned: 5 },
+  "B+": { assigned: 16, resigned: 2 },
+  "B": { assigned: 7, resigned: 2 },
+  "B-": { assigned: 3, resigned: 1 },
+};
+
+// 등급 그룹(A이상 vs B군) 발령/사직 인원
+const GRADE_GROUP_STATS = {
+  "A이상 (S~A-)": { assigned: 111, resigned: 13 },
+  "B군 (B+~B-)": { assigned: 26, resigned: 5 },
+};
+
+// 석차백분율 10%p 구간별 발령/사직 인원 (백분율 미기재 14명 제외, 137명 기준)
+const PERCENTILE_BUCKET_LABELS = ["0-10%", "10-20%", "20-30%", "30-40%", "40-50%", "50-60%", "60-70%", "70-80%", "80-90%"];
+const PERCENTILE_BUCKET_STATS = {
+  "0-10%": { assigned: 38, resigned: 6 },
+  "10-20%": { assigned: 30, resigned: 5 },
+  "20-30%": { assigned: 27, resigned: 3 },
+  "30-40%": { assigned: 23, resigned: 1 },
+  "40-50%": { assigned: 10, resigned: 0 },
+  "50-60%": { assigned: 4, resigned: 0 },
+  "60-70%": { assigned: 2, resigned: 2 },
+  "70-80%": { assigned: 2, resigned: 1 },
+  "80-90%": { assigned: 1, resigned: 0 },
+};
+
 function sumArrays(arrays) {
   const len = arrays[0].length;
   const result = new Array(len).fill(0);

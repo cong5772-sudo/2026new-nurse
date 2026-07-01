@@ -101,11 +101,50 @@ header.top-nav {
 }
 
 header.top-nav .brand {
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   white-space: nowrap;
+}
+
+header.top-nav .brand .brand-org {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+}
+
+header.top-nav .brand .brand-title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.github-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  text-decoration: none;
+  background: var(--surface-indigo);
+  border: 1px solid var(--hairline);
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.github-link:hover {
+  background: var(--surface-indigo-soft);
 }
 
 nav.tabs {

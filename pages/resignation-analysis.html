@@ -10,7 +10,10 @@
 <body>
 
 <header class="top-nav">
-  <div class="brand">2026 신규간호사 인력 대시보드</div>
+  <div class="brand">
+    <span class="brand-org">해운대백병원 간호교육팀</span>
+    <span class="brand-title">신규간호사 인력관리 대시보드</span>
+  </div>
   <nav class="tabs">
     <a href="../index.html">① 발령 현황</a>
     <a href="resignation-analysis.html" class="active">② 사직 분석</a>
@@ -74,6 +77,68 @@
       <table id="periodTable">
         <thead>
           <tr id="periodTableHead"></tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <h2 class="section-title" style="margin-top: 8px;">사직 상세 분석 — 다각적 요인</h2>
+  <p class="section-sub">시트[26신규명단] 원본의 사직사유 · 출신학교 · 석차백분율 · AI역량검사평가를 기준으로 사직자 20명을 분석했습니다.</p>
+
+  <section class="chart-table-grid">
+    <div class="panel">
+      <h2>사직사유 분포</h2>
+      <div class="chart-wrap" style="height: 280px;">
+        <canvas id="reasonChart"></canvas>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>사직자 출신학교 분포</h2>
+      <div class="chart-wrap" style="height: 280px;">
+        <canvas id="schoolChart"></canvas>
+      </div>
+      <p class="legend-note">전체 발령인원 대비 학교별 사직율이 아닌, 사직자 20명 중 출신학교 빈도입니다.</p>
+    </div>
+  </section>
+
+  <section class="chart-table-grid">
+    <div class="panel">
+      <h2>AI역량검사평가 등급별 사직율</h2>
+      <div class="chart-wrap" style="height: 300px;">
+        <canvas id="gradeChart"></canvas>
+      </div>
+      <div class="insight-box" id="gradeInsightBox" style="display:none;">
+        <span class="insight-icon">💡</span>
+        <span class="insight-text" id="gradeInsightText"></span>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>등급별 발령·사직 상세</h2>
+      <table id="gradeTable">
+        <thead>
+          <tr><th>등급</th><th>발령인원</th><th>사직인원</th><th>사직율</th></tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <section class="chart-table-grid">
+    <div class="panel">
+      <h2>석차백분율 구간별 사직율</h2>
+      <div class="chart-wrap" style="height: 300px;">
+        <canvas id="percentileChart"></canvas>
+      </div>
+      <p class="legend-note">석차백분율 수치가 낮을수록 상위권입니다. 60% 이상 구간은 표본이 1~2명으로 적어 참고용으로만 봐주세요.</p>
+    </div>
+    <div class="panel">
+      <h2>구간별 발령·사직 상세</h2>
+      <table id="percentileTable">
+        <thead>
+          <tr><th>석차백분율 구간</th><th>발령인원</th><th>사직인원</th><th>사직율</th></tr>
         </thead>
         <tbody></tbody>
         <tfoot></tfoot>
