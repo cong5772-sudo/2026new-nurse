@@ -3,29 +3,38 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>신규간호사 사직 분석</title>
+<title>신규간호사 사직 현황 및 요인 분석</title>
 <link rel="stylesheet" href="../assets/style.css" />
 <script src="../assets/chart.umd.js"></script>
 </head>
 <body>
 
-<header class="top-nav">
-  <div class="brand">
-    <span class="brand-org">해운대백병원 간호교육팀</span>
-    <span class="brand-title">신규간호사 인력관리 대시보드</span>
-  </div>
-  <nav class="tabs">
-    <a href="../index.html">① 발령 현황</a>
-    <a href="resignation-analysis.html" class="active">② 사직 분석</a>
-    <a href="department-resignation.html">③ 부서별 사직 분석</a>
-  </nav>
-</header>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-org">해운대백병원 간호교육팀</div>
+      <div class="brand-title">신규간호사 인력관리 대시보드</div>
+    </div>
+    <div>
+      <div class="sidebar-label">대시보드</div>
+      <nav class="side-nav">
+        <a href="../index.html"><span class="side-nav-dot" style="background:#0075de"></span>발령 현황</a>
+        <a href="resignation-analysis.html" class="active"><span class="side-nav-dot" style="background:#8f6fd8"></span>사직 분석</a>
+        <a href="department-resignation.html"><span class="side-nav-dot" style="background:#2a9d99"></span>부서별 사직 분석</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <a class="github-link" href="https://github.com/cong5772-sudo/2026new-nurse/tree/claude/new-nurse-assignment-dashboard-y5zekq" target="_blank" rel="noopener">GitHub ↗</a>
+    </div>
+  </aside>
 
-<main>
-  <h1 class="page-title">신규간호사 사직 분석</h1>
-  <p class="page-sub" id="asOfText">기준일 : -</p>
+  <main>
+    <div class="page-container">
+      <span class="eyebrow">다각적 요인 분석</span>
+      <h1 class="page-title">신규간호사 사직 현황 및 요인 분석</h1>
+      <p class="page-sub" id="asOfText">기준일 : -</p>
 
-  <section class="stat-grid">
+      <section class="stat-grid">
     <div class="stat-card">
       <div class="stat-label">총 발령 인원</div>
       <div class="stat-value" id="statAssigned">- <span class="stat-unit">명</span></div>
@@ -144,8 +153,10 @@
         <tfoot></tfoot>
       </table>
     </div>
-  </section>
-</main>
+      </section>
+    </div>
+  </main>
+</div>
 
 <script src="../assets/chart-theme.js"></script>
 <script src="../assets/data.js"></script>
