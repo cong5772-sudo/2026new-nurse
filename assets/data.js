@@ -62,6 +62,25 @@ const YEARLY_COMPARISON = {
   2024: 167,
 };
 
+// 발령일자별 사직인원 (시트2[사직율] 기준)
+const RESIGNATION_BY_DATE = [6, 14, 0];
+
+// 사직발생기간 구분 및 발령일자별 사직인원 (시트2[사직율] 기준)
+const RESIGNATION_PERIOD_LABELS = [
+  "1개월 이내",
+  "2개월 이내",
+  "3개월 이내",
+  "6개월 이내",
+  "12개월 이내",
+  "12개월 이상",
+];
+
+const RESIGNATION_PERIOD_BY_DATE = [
+  [0, 1, 5, 0, 0, 0], // 2026-01-01
+  [2, 6, 6, 0, 0, 0], // 2026-04-01
+  [0, 0, 0, 0, 0, 0], // 2026-07-01
+];
+
 function sumArrays(arrays) {
   const len = arrays[0].length;
   const result = new Array(len).fill(0);
@@ -90,4 +109,8 @@ function getTotalByDate() {
 
 function getYearTotal() {
   return getTotalByDate().reduce((a, b) => a + b, 0);
+}
+
+function getResignationPeriodTotals() {
+  return sumArrays(RESIGNATION_PERIOD_BY_DATE);
 }

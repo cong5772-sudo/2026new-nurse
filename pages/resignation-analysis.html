@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>신규간호사 사직 분석</title>
 <link rel="stylesheet" href="../assets/style.css" />
+<script src="../assets/chart.umd.js"></script>
 </head>
 <body>
 
@@ -19,12 +20,69 @@
 
 <main>
   <h1 class="page-title">신규간호사 사직 분석</h1>
-  <p class="page-sub">준비 중인 페이지입니다.</p>
-  <div class="placeholder-page">
-    <h2>② 신규간호사 사직 분석</h2>
-    <p>다음 단계에서 제작 예정입니다.</p>
-  </div>
+  <p class="page-sub" id="asOfText">기준일 : -</p>
+
+  <section class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-label">총 발령 인원</div>
+      <div class="stat-value" id="statAssigned">- <span class="stat-unit">명</span></div>
+      <div class="stat-sub">2026년 누적 (1~3차)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">총 사직 인원</div>
+      <div class="stat-value" id="statResigned">- <span class="stat-unit">명</span></div>
+      <div class="stat-sub" id="statResignedSub">-</div>
+    </div>
+    <div class="stat-card emphasis">
+      <div class="stat-label">전체 사직율</div>
+      <div class="stat-value" id="statRate">- <span class="stat-unit">%</span></div>
+      <div class="stat-sub" id="statRateSub">-</div>
+    </div>
+  </section>
+
+  <section class="chart-table-grid">
+    <div class="panel">
+      <h2>발령일자별 발령·사직 인원 및 사직율</h2>
+      <div class="chart-wrap">
+        <canvas id="dateResignChart"></canvas>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>발령일자별 상세</h2>
+      <table id="dateResignTable">
+        <thead>
+          <tr><th>발령 회차</th><th>발령일자</th><th>발령인원</th><th>사직인원</th><th>사직율</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="chart-table-grid">
+    <div class="panel">
+      <h2>사직발생시기별 분석</h2>
+      <div class="chart-wrap">
+        <canvas id="periodChart"></canvas>
+      </div>
+      <div class="insight-box" id="insightBox" style="display:none;">
+        <span class="insight-icon">💡</span>
+        <span class="insight-text" id="insightText"></span>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>발령일자별 사직발생시기 상세</h2>
+      <table id="periodTable">
+        <thead>
+          <tr id="periodTableHead"></tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot></tfoot>
+      </table>
+    </div>
+  </section>
 </main>
 
+<script src="../assets/data.js"></script>
+<script src="../assets/dashboard-resignation.js"></script>
 </body>
 </html>
