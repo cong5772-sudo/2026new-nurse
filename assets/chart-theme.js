@@ -1,10 +1,10 @@
 const BRAND = {
-  primary: "#0075de",
-  green: "#1aae39",
-  magenta: "#ff64c8",
-  link: "#62aef0",
-  muted: "#615d59",
-  grid: "#e6e6e6",
+  primary: "#3763e0",
+  green: "#16a34a",
+  magenta: "#e5484d",
+  link: "#17b6b0",
+  muted: "#5b6579",
+  grid: "#e7eaf2",
 };
 
 Chart.defaults.color = BRAND.muted;

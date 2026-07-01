@@ -12,15 +12,18 @@
 <div class="app-shell">
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <div class="brand-org">해운대백병원 간호교육팀</div>
-      <div class="brand-title">신규간호사 인력관리 대시보드</div>
+      <div class="logo-box">해</div>
+      <div>
+        <div class="brand-org">해운대백병원</div>
+        <span class="brand-title">간호교육팀</span>
+      </div>
     </div>
     <div>
-      <div class="sidebar-label">대시보드</div>
+      <div class="sidebar-label">Dashboard</div>
       <nav class="side-nav">
-        <a href="../index.html"><span class="side-nav-dot" style="background:#0075de"></span>발령 현황</a>
-        <a href="resignation-analysis.html"><span class="side-nav-dot" style="background:#8f6fd8"></span>사직 분석</a>
-        <a href="department-resignation.html" class="active"><span class="side-nav-dot" style="background:#2a9d99"></span>부서별 사직 분석</a>
+        <a href="../index.html"><span class="side-nav-dot"></span>발령 현황</a>
+        <a href="resignation-analysis.html"><span class="side-nav-dot"></span>사직 분석</a>
+        <a href="department-resignation.html" class="active"><span class="side-nav-dot"></span>부서별 사직 분석</a>
       </nav>
     </div>
     <div class="sidebar-footer">
@@ -29,10 +32,25 @@
   </aside>
 
   <main>
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">신규간호사 인력관리</div>
+        <div class="topbar-crumb">Home / Nursing Staffing / 부서별 사직 분석</div>
+      </div>
+      <div class="badges">
+        <span class="badge">해운대백병원 간호교육팀</span>
+        <span class="badge" id="asOfText">기준일 : -</span>
+      </div>
+    </div>
+
     <div class="page-container">
-      <span class="eyebrow">위험부서 진단</span>
-      <h1 class="page-title">부서별 사직 현황 및 위험도 분석</h1>
-      <p class="page-sub" id="asOfText">기준일 : -</p>
+      <section class="hero-banner">
+        <div>
+          <span class="eyebrow">위험부서 진단</span>
+          <h1 class="page-title">부서별 사직 현황 및 위험도 분석</h1>
+          <p class="page-sub">부서별 발령·사직 인원과 연도별 사직율 비교로 위험 부서를 진단합니다.</p>
+        </div>
+      </section>
 
       <section class="rank-grid" id="rankGrid"></section>
 
