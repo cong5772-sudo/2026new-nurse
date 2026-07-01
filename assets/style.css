@@ -1,15 +1,72 @@
+@font-face {
+  font-family: "Hanken Grotesk";
+  src: url("fonts/hanken-grotesk-700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Hanken Grotesk";
+  src: url("fonts/hanken-grotesk-800.woff2") format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/inter-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/inter-500.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/inter-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/inter-700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  --primary: #0f766e;
-  --primary-dark: #0b544e;
-  --primary-light: #ccfbf1;
-  --accent: #2563eb;
-  --bg: #f4f7f8;
-  --card-bg: #ffffff;
-  --text: #1f2937;
-  --text-muted: #6b7280;
-  --border: #e5e7eb;
-  --up: #dc2626;
-  --down: #2563eb;
+  /* Brand */
+  --primary: #5865f2;
+  --primary-dark: #3c45c4;
+  --on-primary: #ffffff;
+  --green: #35ed7e;
+  --magenta: #ec48bd;
+  --link: #00b0f4;
+
+  /* Surfaces */
+  --canvas: #0a0d3a;
+  --surface-indigo: #1e2353;
+  --surface-indigo-soft: #262c63;
+  --surface-onyx: #14173d;
+
+  /* Text */
+  --ink: #ffffff;
+  --ink-dark: #0a0d3a;
+  --muted: #a6aee0;
+  --hairline: rgba(255, 255, 255, 0.09);
+
+  --up: #ff6b8b;
+  --down: #35ed7e;
+
+  --font-display: "Hanken Grotesk", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-body: "Inter", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
 }
 
 * {
@@ -18,9 +75,13 @@
 
 body {
   margin: 0;
-  font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-  background: var(--bg);
-  color: var(--text);
+  font-family: var(--font-body);
+  background: var(--canvas);
+  background-image:
+    radial-gradient(900px 500px at 8% -10%, rgba(88, 101, 242, 0.35), transparent 60%),
+    radial-gradient(800px 500px at 100% 0%, rgba(236, 72, 189, 0.22), transparent 55%);
+  background-attachment: fixed;
+  color: var(--ink);
   line-height: 1.5;
 }
 
@@ -28,35 +89,38 @@ header.top-nav {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: var(--primary-dark);
+  background: rgba(10, 13, 58, 0.85);
+  backdrop-filter: blur(10px);
   color: #fff;
   padding: 0 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 64px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  height: 68px;
+  border-bottom: 1px solid var(--hairline);
 }
 
 header.top-nav .brand {
+  font-family: var(--font-display);
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 0.02em;
   white-space: nowrap;
 }
 
 nav.tabs {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 nav.tabs a {
-  color: #d1fae5;
+  color: var(--muted);
   text-decoration: none;
-  padding: 10px 16px;
-  border-radius: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
   font-size: 14px;
-  font-weight: 500;
-  transition: background 0.15s;
+  font-weight: 600;
+  transition: background 0.15s, color 0.15s;
   white-space: nowrap;
 }
 
@@ -66,13 +130,14 @@ nav.tabs a.active {
 }
 
 nav.tabs a.disabled {
-  color: #6ea89f;
+  color: #4d5389;
   cursor: default;
   pointer-events: none;
 }
 
 nav.tabs a:not(.active):not(.disabled):hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-indigo);
+  color: #fff;
 }
 
 main {
@@ -82,12 +147,16 @@ main {
 }
 
 h1.page-title {
-  font-size: 22px;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
   margin: 0 0 4px;
 }
 
 p.page-sub {
-  color: var(--text-muted);
+  color: var(--muted);
   margin: 0 0 24px;
   font-size: 13px;
 }
@@ -101,11 +170,10 @@ p.page-sub {
 }
 
 .card {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 14px;
+  background: var(--surface-indigo);
+  border: 1px solid var(--hairline);
+  border-radius: 24px;
   padding: 20px 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .hero-card {
@@ -113,14 +181,15 @@ p.page-sub {
   flex-direction: column;
   justify-content: center;
   gap: 10px;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 55%, var(--magenta) 130%);
   color: #fff;
   border: none;
 }
 
 .hero-card .label {
   font-size: 13px;
-  opacity: 0.85;
+  font-weight: 600;
+  opacity: 0.9;
 }
 
 .hero-card .value-row {
@@ -131,24 +200,25 @@ p.page-sub {
 }
 
 .hero-card .big-number {
-  font-size: 44px;
+  font-family: var(--font-display);
+  font-size: 46px;
   font-weight: 800;
   line-height: 1;
 }
 
 .hero-card .unit {
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
   margin-left: 4px;
   opacity: 0.9;
 }
 
 .hero-card .chip {
   background: rgba(255, 255, 255, 0.18);
-  padding: 6px 12px;
+  padding: 6px 14px;
   border-radius: 999px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .hero-card .rounds {
@@ -159,11 +229,12 @@ p.page-sub {
 }
 
 .hero-card .round-badge {
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
   padding: 6px 10px;
   font-size: 12px;
+  font-weight: 600;
 }
 
 .hero-card .round-badge b {
@@ -172,7 +243,8 @@ p.page-sub {
 
 .compare-card .label {
   font-size: 13px;
-  color: var(--text-muted);
+  font-weight: 600;
+  color: var(--muted);
   margin-bottom: 12px;
 }
 
@@ -192,11 +264,11 @@ p.page-sub {
 
 .compare-item .yr {
   font-weight: 700;
-  color: var(--text);
+  color: var(--ink);
 }
 
 .compare-item .bar-track {
-  background: #eef2f2;
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 6px;
   height: 14px;
   overflow: hidden;
@@ -207,19 +279,20 @@ p.page-sub {
   border-radius: 6px;
 }
 
-.compare-item.y2026 .bar-fill { background: var(--primary); }
-.compare-item.y2025 .bar-fill { background: #94a3b8; }
-.compare-item.y2024 .bar-fill { background: #cbd5e1; }
+.compare-item.y2026 .bar-fill { background: var(--green); }
+.compare-item.y2025 .bar-fill { background: var(--primary); }
+.compare-item.y2024 .bar-fill { background: var(--magenta); }
 
 .compare-item .cnt {
   font-weight: 700;
   text-align: right;
+  color: var(--ink);
 }
 
 .compare-item .delta {
   font-size: 12px;
   text-align: right;
-  color: var(--text-muted);
+  color: var(--muted);
 }
 
 .delta.up { color: var(--up); }
@@ -234,9 +307,9 @@ p.page-sub {
 }
 
 .stat-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 14px;
+  background: var(--surface-indigo);
+  border: 1px solid var(--hairline);
+  border-radius: 24px;
   padding: 22px 24px;
   display: flex;
   flex-direction: column;
@@ -245,24 +318,27 @@ p.page-sub {
 
 .stat-card .stat-label {
   font-size: 13px;
-  color: var(--text-muted);
+  font-weight: 600;
+  color: var(--muted);
 }
 
 .stat-card .stat-value {
-  font-size: 32px;
+  font-family: var(--font-display);
+  font-size: 34px;
   font-weight: 800;
-  color: var(--text);
+  color: var(--ink);
 }
 
 .stat-card .stat-value .stat-unit {
+  font-family: var(--font-body);
   font-size: 15px;
-  font-weight: 500;
-  color: var(--text-muted);
+  font-weight: 600;
+  color: var(--muted);
   margin-left: 4px;
 }
 
 .stat-card.emphasis {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 55%, var(--magenta) 130%);
   border: none;
 }
 
@@ -280,7 +356,7 @@ p.page-sub {
 
 .stat-card .stat-sub {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--muted);
 }
 
 /* Department rank cards */
@@ -292,9 +368,9 @@ p.page-sub {
 }
 
 .rank-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 14px;
+  background: var(--surface-indigo);
+  border: 1px solid var(--hairline);
+  border-radius: 24px;
   padding: 18px 22px;
   position: relative;
   overflow: hidden;
@@ -307,19 +383,22 @@ p.page-sub {
   font-size: 12px;
   font-weight: 700;
   color: #fff;
-  background: var(--up);
-  padding: 3px 9px;
+  background: var(--magenta);
+  padding: 3px 11px;
   border-radius: 999px;
 }
 
 .rank-card .rank-dept {
+  font-family: var(--font-display);
   font-size: 15px;
-  color: var(--text-muted);
+  font-weight: 700;
+  color: var(--muted);
   margin-bottom: 4px;
 }
 
 .rank-card .rank-rate {
-  font-size: 30px;
+  font-family: var(--font-display);
+  font-size: 32px;
   font-weight: 800;
   color: var(--up);
   margin-bottom: 6px;
@@ -327,7 +406,7 @@ p.page-sub {
 
 .rank-card .rank-detail {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--muted);
   margin-bottom: 8px;
 }
 
@@ -338,9 +417,10 @@ p.page-sub {
 }
 
 .rank-card .rank-compare span {
-  background: #f1f5f5;
-  border-radius: 6px;
-  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 999px;
+  padding: 3px 10px;
+  color: var(--muted);
 }
 
 /* Insight callout */
@@ -348,9 +428,9 @@ p.page-sub {
   display: flex;
   align-items: center;
   gap: 14px;
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
-  border-radius: 12px;
+  background: rgba(236, 72, 189, 0.12);
+  border: 1px solid rgba(236, 72, 189, 0.35);
+  border-radius: 16px;
   padding: 16px 20px;
   margin-top: 16px;
 }
@@ -361,11 +441,12 @@ p.page-sub {
 
 .insight-box .insight-text {
   font-size: 14px;
-  color: #9a3412;
+  color: var(--ink);
 }
 
 .insight-box .insight-text b {
   font-size: 16px;
+  color: var(--magenta);
 }
 
 /* Chart + table row */
@@ -377,15 +458,18 @@ p.page-sub {
 }
 
 .panel {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 14px;
+  background: var(--surface-indigo);
+  border: 1px solid var(--hairline);
+  border-radius: 24px;
   padding: 20px;
 }
 
 .panel h2 {
+  font-family: var(--font-display);
   font-size: 15px;
+  font-weight: 700;
   margin: 0 0 16px;
+  color: var(--ink);
 }
 
 .chart-wrap {
@@ -398,39 +482,45 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  color: var(--ink);
 }
 
 table th, table td {
-  padding: 9px 10px;
-  border-bottom: 1px solid var(--border);
+  padding: 10px 10px;
+  border-bottom: 1px solid var(--hairline);
   text-align: center;
 }
 
 table thead th {
-  background: #f1f5f5;
-  color: var(--text-muted);
-  font-weight: 600;
+  background: var(--surface-onyx);
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
   position: sticky;
   top: 0;
 }
 
 table tbody tr:hover {
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.04);
 }
 
 table tfoot td {
   font-weight: 700;
-  background: #f1f5f5;
+  background: var(--surface-onyx);
 }
 
 .section-title {
-  font-size: 17px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
   margin: 0 0 4px;
 }
 
 .section-sub {
   font-size: 13px;
-  color: var(--text-muted);
+  color: var(--muted);
   margin: 0 0 16px;
 }
 
@@ -440,50 +530,51 @@ table tfoot td {
 
 table.dept-table td.dept-name {
   text-align: left;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 table.dept-table tr.group-header td {
-  background: var(--primary-light);
-  color: var(--primary-dark);
-  font-weight: 700;
+  background: rgba(88, 101, 242, 0.22);
+  color: #cfd4ff;
+  font-weight: 800;
   text-align: left;
 }
 
 table.dept-table tr.group-subtotal td {
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.05);
   font-weight: 700;
-  color: var(--primary-dark);
+  color: var(--ink);
 }
 
 table.dept-table tr.grand-total td {
-  background: var(--primary-dark);
+  background: var(--primary);
   color: #fff;
   font-weight: 800;
 }
 
 td.cum {
-  color: var(--text-muted);
+  color: var(--muted);
   font-size: 12px;
 }
 
 .legend-note {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--muted);
   margin-top: 10px;
 }
 
 .placeholder-page {
-  background: var(--card-bg);
-  border: 1px dashed var(--border);
-  border-radius: 14px;
+  background: var(--surface-indigo);
+  border: 1px dashed var(--hairline);
+  border-radius: 24px;
   padding: 60px 24px;
   text-align: center;
-  color: var(--text-muted);
+  color: var(--muted);
 }
 
 .placeholder-page h2 {
-  color: var(--text);
+  font-family: var(--font-display);
+  color: var(--ink);
   margin-bottom: 8px;
 }
 
@@ -492,7 +583,7 @@ td.cum {
     grid-template-columns: 1fr;
   }
   nav.tabs a {
-    padding: 8px 10px;
+    padding: 8px 12px;
     font-size: 13px;
   }
 }

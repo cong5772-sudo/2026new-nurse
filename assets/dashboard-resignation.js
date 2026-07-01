@@ -26,23 +26,23 @@
         {
           label: "발령인원",
           data: totalByDate,
-          backgroundColor: "#0f766e",
-          borderRadius: 6,
+          backgroundColor: BRAND.primary,
+          borderRadius: 8,
           yAxisID: "y",
         },
         {
           label: "사직인원",
           data: resignByDate,
-          backgroundColor: "#dc2626",
-          borderRadius: 6,
+          backgroundColor: BRAND.magenta,
+          borderRadius: 8,
           yAxisID: "y",
         },
         {
           label: "사직율(%)",
           data: rateByDate.map((v) => Number(v.toFixed(1))),
           type: "line",
-          borderColor: "#f59e0b",
-          backgroundColor: "#f59e0b",
+          borderColor: BRAND.green,
+          backgroundColor: BRAND.green,
           tension: 0.3,
           yAxisID: "y1",
         },
@@ -53,7 +53,7 @@
       maintainAspectRatio: false,
       interaction: { mode: "index", intersect: false },
       plugins: {
-        legend: { position: "bottom" },
+        legend: { position: "bottom", labels: { color: BRAND.muted } },
         tooltip: {
           callbacks: {
             label: (c) => (c.dataset.label === "사직율(%)" ? `${c.dataset.label}: ${c.parsed.y}%` : `${c.dataset.label}: ${c.parsed.y}명`),
@@ -61,12 +61,23 @@
         },
       },
       scales: {
-        y: { beginAtZero: true, position: "left", title: { display: true, text: "인원(명)" } },
+        y: {
+          beginAtZero: true,
+          position: "left",
+          title: { display: true, text: "인원(명)", color: BRAND.muted },
+          grid: { color: BRAND.grid },
+          ticks: { color: BRAND.muted },
+        },
         y1: {
           beginAtZero: true,
           position: "right",
           grid: { drawOnChartArea: false },
-          title: { display: true, text: "사직율(%)" },
+          title: { display: true, text: "사직율(%)", color: BRAND.muted },
+          ticks: { color: BRAND.muted },
+        },
+        x: {
+          grid: { color: BRAND.grid },
+          ticks: { color: BRAND.muted },
         },
       },
     },
@@ -98,7 +109,7 @@
   const periodTotals = getResignationPeriodTotals();
   const periodMax = Math.max(...periodTotals);
   const maxIndex = periodTotals.indexOf(periodMax);
-  const periodColors = periodTotals.map((_, i) => (i === maxIndex ? "#dc2626" : "#94a3b8"));
+  const periodColors = periodTotals.map((_, i) => (i === maxIndex ? BRAND.magenta : "rgba(166, 174, 224, 0.35)"));
 
   const ctx2 = document.getElementById("periodChart").getContext("2d");
   new Chart(ctx2, {
@@ -110,7 +121,7 @@
           label: "사직인원",
           data: periodTotals,
           backgroundColor: periodColors,
-          borderRadius: 6,
+          borderRadius: 8,
         },
       ],
     },
@@ -129,7 +140,16 @@
         },
       },
       scales: {
-        y: { beginAtZero: true, title: { display: true, text: "사직인원(명)" } },
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: "사직인원(명)", color: BRAND.muted },
+          grid: { color: BRAND.grid },
+          ticks: { color: BRAND.muted },
+        },
+        x: {
+          grid: { color: BRAND.grid },
+          ticks: { color: BRAND.muted },
+        },
       },
     },
   });

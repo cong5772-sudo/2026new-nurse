@@ -48,17 +48,17 @@
         {
           label: "2026년",
           data: sortedDesc.map((d) => Number(d.rate2026.toFixed(1))),
-          backgroundColor: "#0f766e",
+          backgroundColor: BRAND.primary,
         },
         {
           label: "2025년",
           data: sortedDesc.map((d) => d.rate2025),
-          backgroundColor: "#94a3b8",
+          backgroundColor: BRAND.magenta,
         },
         {
           label: "2024년",
           data: sortedDesc.map((d) => d.rate2024),
-          backgroundColor: "#cbd5e1",
+          backgroundColor: "rgba(166, 174, 224, 0.35)",
         },
       ],
     },
@@ -67,11 +67,20 @@
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { position: "bottom" },
+        legend: { position: "bottom", labels: { color: BRAND.muted } },
         tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.parsed.x}%` } },
       },
       scales: {
-        x: { beginAtZero: true, title: { display: true, text: "사직율(%)" } },
+        x: {
+          beginAtZero: true,
+          title: { display: true, text: "사직율(%)", color: BRAND.muted },
+          grid: { color: BRAND.grid },
+          ticks: { color: BRAND.muted },
+        },
+        y: {
+          grid: { color: BRAND.grid },
+          ticks: { color: BRAND.muted },
+        },
       },
     },
   });
