@@ -136,18 +136,12 @@
 
   // 부서별 세부 표 헤더
   const headRow = document.getElementById("deptTableHeadRow");
-  let headHtml = `<th rowspan="2">부서</th>`;
+  let headHtml = `<th>부서</th>`;
   DATES.forEach((date, i) => {
-    headHtml += `<th colspan="2">${i + 1}차 (${date})</th>`;
+    headHtml += `<th>${i + 1}차 (${date})</th>`;
   });
+  headHtml += `<th>누적인원</th>`;
   headRow.innerHTML = headHtml;
-  const subHeadRow = document.createElement("tr");
-  let subHeadHtml = "";
-  DATES.forEach(() => {
-    subHeadHtml += `<th>발령인원</th><th>누적인원</th>`;
-  });
-  subHeadRow.innerHTML = subHeadHtml;
-  headRow.parentElement.appendChild(subHeadRow);
 
   // 부서별 세부 표 본문
   const deptTableBody = document.querySelector("#deptTable tbody");
@@ -156,7 +150,7 @@
   DEPT_GROUPS.forEach((group) => {
     const groupHeaderRow = document.createElement("tr");
     groupHeaderRow.className = "group-header";
-    groupHeaderRow.innerHTML = `<td colspan="${1 + DATES.length * 2}">${group.name}</td>`;
+    groupHeaderRow.innerHTML = `<td colspan="${2 + DATES.length}">${group.name}</td>`;
     deptTableBody.appendChild(groupHeaderRow);
 
     const groupTotals = new Array(DATES.length).fill(0);
@@ -166,9 +160,10 @@
       values.forEach((v, i) => (groupTotals[i] += v));
       const tr = document.createElement("tr");
       let cells = `<td class="dept-name">${deptName}</td>`;
-      values.forEach((v, i) => {
-        cells += `<td>${v}명</td><td class="cum">${cum[i]}명</td>`;
+      values.forEach((v) => {
+        cells += `<td>${v}명</td>`;
       });
+      cells += `<td class="cum">${cum[cum.length - 1]}명</td>`;
       tr.innerHTML = cells;
       deptTableBody.appendChild(tr);
     });
@@ -178,9 +173,10 @@
     const subtotalRow = document.createElement("tr");
     subtotalRow.className = "group-subtotal";
     let subCells = `<td class="dept-name">${group.name} 소계</td>`;
-    groupTotals.forEach((v, i) => {
-      subCells += `<td>${v}명</td><td class="cum">${groupCum[i]}명</td>`;
+    groupTotals.forEach((v) => {
+      subCells += `<td>${v}명</td>`;
     });
+    subCells += `<td>${groupCum[groupCum.length - 1]}명</td>`;
     subtotalRow.innerHTML = subCells;
     deptTableBody.appendChild(subtotalRow);
   });
@@ -189,9 +185,10 @@
   const grandRow = document.createElement("tr");
   grandRow.className = "grand-total";
   let grandCells = `<td class="dept-name">전체 합계</td>`;
-  grandTotals.forEach((v, i) => {
-    grandCells += `<td>${v}명</td><td>${grandCum[i]}명</td>`;
+  grandTotals.forEach((v) => {
+    grandCells += `<td>${v}명</td>`;
   });
+  grandCells += `<td>${grandCum[grandCum.length - 1]}명</td>`;
   grandRow.innerHTML = grandCells;
   deptTableBody.appendChild(grandRow);
 })();

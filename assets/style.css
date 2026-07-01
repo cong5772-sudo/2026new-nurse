@@ -499,6 +499,10 @@ p.page-sub {
   color: rgba(255, 255, 255, 0.85);
 }
 
+.stat-card.emphasis .stat-sub {
+  color: rgba(255, 255, 255, 0.8);
+}
+
 .stat-card .stat-sub {
   font-size: 12px;
   color: var(--ink-muted);
@@ -683,10 +687,19 @@ table.dept-table td.dept-name {
   color: var(--ink);
 }
 
+table.dept-table thead th {
+  color: var(--blue-dark);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
 table.dept-table tr.group-header td {
   background: #eaf0fd;
   color: var(--blue-dark);
   font-weight: 700;
+  font-size: 13px;
   text-align: left;
 }
 
