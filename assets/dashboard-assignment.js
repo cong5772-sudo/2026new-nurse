@@ -1,4 +1,6 @@
-(function () {
+let assignmentDateChart = null;
+
+function renderAssignmentPage() {
   const totalByDate = getTotalByDate();
   const cumulative = toCumulative(totalByDate);
   const yearTotal = getYearTotal();
@@ -11,6 +13,7 @@
 
   // 회차 배지
   const roundBadgesEl = document.getElementById("roundBadges");
+  roundBadgesEl.innerHTML = "";
   DATES.forEach((date, i) => {
     const badge = document.createElement("div");
     badge.className = "round-badge";
@@ -26,6 +29,7 @@
   ];
   const maxCompare = Math.max(...compareData.map((d) => d.count));
   const compareRowsEl = document.getElementById("compareRows");
+  compareRowsEl.innerHTML = "";
   compareData.forEach((d) => {
     const row = document.createElement("div");
     row.className = `compare-item y${d.year}`;
@@ -61,8 +65,11 @@
   });
 
   // 발령일자별 차트
+  if (assignmentDateChart) {
+    assignmentDateChart.destroy();
+  }
   const ctx = document.getElementById("dateChart").getContext("2d");
-  new Chart(ctx, {
+  assignmentDateChart = new Chart(ctx, {
     type: "bar",
     data: {
       labels: DATES,
@@ -120,6 +127,7 @@
 
   // 발령일자별 상세 표
   const dateTableBody = document.querySelector("#dateTable tbody");
+  dateTableBody.innerHTML = "";
   DATES.forEach((date, i) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -145,6 +153,7 @@
 
   // 부서별 세부 표 본문
   const deptTableBody = document.querySelector("#deptTable tbody");
+  deptTableBody.innerHTML = "";
   const grandTotals = new Array(DATES.length).fill(0);
 
   DEPT_GROUPS.forEach((group) => {
@@ -191,4 +200,7 @@
   grandCells += `<td>${grandCum[grandCum.length - 1]}명</td>`;
   grandRow.innerHTML = grandCells;
   deptTableBody.appendChild(grandRow);
-})();
+}
+
+renderAssignmentPage();
+window.renderCurrentPage = renderAssignmentPage;

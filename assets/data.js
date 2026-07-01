@@ -1,9 +1,65 @@
-// 신규간호사 발령/사직 데이터 (구글 시트 원본 기준, 2026-07-01 업데이트)
-// 각 부서 배열의 순서는 DATES 배열의 발령일자 순서와 동일하다.
+// 신규간호사 발령/사직 데이터 (구글 시트 원본 기준, 2026-07-01 스냅샷)
+// 아래 값들은 페이지가 처음 열릴 때 보여줄 기본값이며, "실시간 조회" 버튼을 누르면
+// live-sync.js 가 구글 시트[26신규명단]을 다시 읽어 이 값들을 갱신한다.
 
-const DATES = ["2026-01-01", "2026-04-01", "2026-07-01"];
+// 부서 조직 구성 (그룹 ↔ 부서 매핑) — 조직 구조이므로 실시간 조회로 바뀌지 않는다.
+const DEPT_GROUP_DEFS = [
+  { name: "일반병동", deptNames: ["12A", "12B", "11B", "10A", "10B", "8A", "8B", "7B"] },
+  { name: "통합병동", deptNames: ["14A", "14B", "13A", "13B", "11A", "9A", "9B", "7A"] },
+  { name: "중환자", deptNames: ["MICU", "SICU", "EICU", "NICU", "MFICU"] },
+  { name: "수술회복", deptNames: ["수술실", "회복실"] },
+  { name: "응급", deptNames: ["응급실"] },
+];
 
-const DEPT_GROUPS = [
+// 부서별 2025년·2024년 사직율 비교 (과거 연도 수치는 원본 로스터에 없어 별도 보관, 사용자 제공값)
+const HISTORICAL_DEPT_RATES = {
+  "14A": { rate2025: 0.0, rate2024: 25.0 },
+  "14B": { rate2025: 0.0, rate2024: 0.0 },
+  "13A": { rate2025: 0.0, rate2024: 0.0 },
+  "13B": { rate2025: 0.0, rate2024: 0.0 },
+  "12A": { rate2025: 25.0, rate2024: 50.0 },
+  "12B": { rate2025: 33.3, rate2024: 33.3 },
+  "11A": { rate2025: 50.0, rate2024: 0.0 },
+  "11B": { rate2025: 14.3, rate2024: 42.9 },
+  "10A": { rate2025: 60.0, rate2024: 16.7 },
+  "10B": { rate2025: 14.3, rate2024: 16.7 },
+  "9A": { rate2025: 71.4, rate2024: 0.0 },
+  "9B": { rate2025: 83.3, rate2024: 0.0 },
+  "8A": { rate2025: 25.0, rate2024: 16.7 },
+  "8B": { rate2025: 20.0, rate2024: 0.0 },
+  "7A": { rate2025: 20.0, rate2024: 33.3 },
+  "7B": { rate2025: 0.0, rate2024: 0.0 },
+  MFICU: { rate2025: 0.0, rate2024: 0.0 },
+  NICU: { rate2025: 0.0, rate2024: 21.7 },
+  EICU: { rate2025: 0.0, rate2024: 0.0 },
+  MICU: { rate2025: 0.0, rate2024: 0.0 },
+  SICU: { rate2025: 17.6, rate2024: 25.0 },
+  수술실: { rate2025: 22.2, rate2024: 43.8 },
+  회복실: { rate2025: 0.0, rate2024: 0.0 },
+  응급실: { rate2025: 0.0, rate2024: 0.0 },
+};
+
+// 연도별 발령 인원 비교 데이터 (2025/2024는 원본 로스터에 없는 과거 연도라 사용자 제공값 사용)
+const YEARLY_COMPARISON = {
+  2026: null, // 현재 연도 누적치는 실데이터로 계산
+  2025: 143,
+  2024: 167,
+};
+
+const GRADE_ORDER = ["S", "A+", "A", "A-", "B+", "B", "B-"];
+const RESIGNATION_PERIOD_LABELS = [
+  "1개월 이내",
+  "2개월 이내",
+  "3개월 이내",
+  "6개월 이내",
+  "12개월 이내",
+  "12개월 이상",
+];
+
+// ── 아래는 로스터로부터 계산되는 값들 (실시간 조회 시 재계산되어 교체됨) ──
+let DATES = ["2026-01-01", "2026-04-01", "2026-07-01"];
+
+let DEPT_GROUPS = [
   {
     name: "일반병동",
     depts: {
@@ -55,36 +111,15 @@ const DEPT_GROUPS = [
   },
 ];
 
-// 연도별 비교 데이터 (사용자 제공)
-const YEARLY_COMPARISON = {
-  2026: null, // 현재 연도 누적치는 실데이터로 계산
-  2025: 143,
-  2024: 167,
-};
+let RESIGNATION_BY_DATE = [6, 14, 0];
 
-// 발령일자별 사직인원 (시트2[사직율] 기준)
-const RESIGNATION_BY_DATE = [6, 14, 0];
-
-// 사직발생기간 구분 및 발령일자별 사직인원 (시트2[사직율] 기준)
-const RESIGNATION_PERIOD_LABELS = [
-  "1개월 이내",
-  "2개월 이내",
-  "3개월 이내",
-  "6개월 이내",
-  "12개월 이내",
-  "12개월 이상",
-];
-
-const RESIGNATION_PERIOD_BY_DATE = [
+let RESIGNATION_PERIOD_BY_DATE = [
   [0, 1, 5, 0, 0, 0], // 2026-01-01
   [2, 6, 6, 0, 0, 0], // 2026-04-01
   [0, 0, 0, 0, 0, 0], // 2026-07-01
 ];
 
-// ── 사직 상세 분석 (시트[26신규명단] 원본 기준, 사직자 20명 다각적 요인) ──
-
-// 사직사유 분포
-const RESIGNATION_REASON_COUNTS = {
+let RESIGNATION_REASON_COUNTS = {
   "기타": 7,
   "(미기재)": 10,
   "학업": 1,
@@ -92,8 +127,7 @@ const RESIGNATION_REASON_COUNTS = {
   "이직": 1,
 };
 
-// 사직자 출신학교 분포 (2건 이상만 개별 표시, 1건은 기타로 묶음)
-const RESIGNATION_SCHOOL_COUNTS = {
+let RESIGNATION_SCHOOL_COUNTS = {
   "인제대학교": 3,
   "대동대학교": 2,
   "동서대학교": 2,
@@ -103,9 +137,7 @@ const RESIGNATION_SCHOOL_COUNTS = {
   "기타(1건씩 7개교)": 7,
 };
 
-// AI역량검사평가 등급별 발령/사직 인원 (전체 151명 기준)
-const GRADE_ORDER = ["S", "A+", "A", "A-", "B+", "B", "B-"];
-const GRADE_STATS = {
+let GRADE_STATS = {
   "S": { assigned: 10, resigned: 1 },
   "A+": { assigned: 27, resigned: 2 },
   "A": { assigned: 46, resigned: 5 },
@@ -115,15 +147,13 @@ const GRADE_STATS = {
   "B-": { assigned: 3, resigned: 1 },
 };
 
-// 등급 그룹(A이상 vs B군) 발령/사직 인원
-const GRADE_GROUP_STATS = {
+let GRADE_GROUP_STATS = {
   "A이상 (S~A-)": { assigned: 111, resigned: 13 },
   "B군 (B+~B-)": { assigned: 26, resigned: 5 },
 };
 
-// 석차백분율 10%p 구간별 발령/사직 인원 (백분율 미기재 14명 제외, 137명 기준)
-const PERCENTILE_BUCKET_LABELS = ["0-10%", "10-20%", "20-30%", "30-40%", "40-50%", "50-60%", "60-70%", "70-80%", "80-90%"];
-const PERCENTILE_BUCKET_STATS = {
+let PERCENTILE_BUCKET_LABELS = ["0-10%", "10-20%", "20-30%", "30-40%", "40-50%", "50-60%", "60-70%", "70-80%", "80-90%"];
+let PERCENTILE_BUCKET_STATS = {
   "0-10%": { assigned: 38, resigned: 6 },
   "10-20%": { assigned: 30, resigned: 5 },
   "20-30%": { assigned: 27, resigned: 3 },
@@ -133,6 +163,33 @@ const PERCENTILE_BUCKET_STATS = {
   "60-70%": { assigned: 2, resigned: 2 },
   "70-80%": { assigned: 2, resigned: 1 },
   "80-90%": { assigned: 1, resigned: 0 },
+};
+
+let DEPT_RESIGNATION = {
+  "14A": { assigned: 8, resigned: 1, rate2025: 0.0, rate2024: 25.0 },
+  "14B": { assigned: 7, resigned: 2, rate2025: 0.0, rate2024: 0.0 },
+  "13A": { assigned: 5, resigned: 0, rate2025: 0.0, rate2024: 0.0 },
+  "13B": { assigned: 6, resigned: 0, rate2025: 0.0, rate2024: 0.0 },
+  "12A": { assigned: 4, resigned: 2, rate2025: 25.0, rate2024: 50.0 },
+  "12B": { assigned: 7, resigned: 1, rate2025: 33.3, rate2024: 33.3 },
+  "11A": { assigned: 5, resigned: 0, rate2025: 50.0, rate2024: 0.0 },
+  "11B": { assigned: 7, resigned: 2, rate2025: 14.3, rate2024: 42.9 },
+  "10A": { assigned: 5, resigned: 0, rate2025: 60.0, rate2024: 16.7 },
+  "10B": { assigned: 7, resigned: 3, rate2025: 14.3, rate2024: 16.7 },
+  "9A": { assigned: 6, resigned: 2, rate2025: 71.4, rate2024: 0.0 },
+  "9B": { assigned: 7, resigned: 0, rate2025: 83.3, rate2024: 0.0 },
+  "8A": { assigned: 7, resigned: 1, rate2025: 25.0, rate2024: 16.7 },
+  "8B": { assigned: 5, resigned: 1, rate2025: 20.0, rate2024: 0.0 },
+  "7A": { assigned: 7, resigned: 0, rate2025: 20.0, rate2024: 33.3 },
+  "7B": { assigned: 7, resigned: 1, rate2025: 0.0, rate2024: 0.0 },
+  MFICU: { assigned: 5, resigned: 0, rate2025: 0.0, rate2024: 0.0 },
+  NICU: { assigned: 11, resigned: 0, rate2025: 0.0, rate2024: 21.7 },
+  EICU: { assigned: 5, resigned: 0, rate2025: 0.0, rate2024: 0.0 },
+  MICU: { assigned: 6, resigned: 0, rate2025: 0.0, rate2024: 0.0 },
+  SICU: { assigned: 6, resigned: 0, rate2025: 17.6, rate2024: 25.0 },
+  수술실: { assigned: 8, resigned: 1, rate2025: 22.2, rate2024: 43.8 },
+  회복실: { assigned: 5, resigned: 2, rate2025: 0.0, rate2024: 0.0 },
+  응급실: { assigned: 5, resigned: 1, rate2025: 0.0, rate2024: 0.0 },
 };
 
 function sumArrays(arrays) {
@@ -169,34 +226,6 @@ function getResignationPeriodTotals() {
   return sumArrays(RESIGNATION_PERIOD_BY_DATE);
 }
 
-// 부서별 2026년 발령/사직 인원(누적) 및 2025년·2024년 사직율 비교 (시트 원본 기준)
-const DEPT_RESIGNATION = {
-  "14A": { assigned: 8, resigned: 1, rate2025: 0.0, rate2024: 25.0 },
-  "14B": { assigned: 7, resigned: 2, rate2025: 0.0, rate2024: 0.0 },
-  "13A": { assigned: 5, resigned: 0, rate2025: 0.0, rate2024: 0.0 },
-  "13B": { assigned: 6, resigned: 0, rate2025: 0.0, rate2024: 0.0 },
-  "12A": { assigned: 4, resigned: 2, rate2025: 25.0, rate2024: 50.0 },
-  "12B": { assigned: 7, resigned: 1, rate2025: 33.3, rate2024: 33.3 },
-  "11A": { assigned: 5, resigned: 0, rate2025: 50.0, rate2024: 0.0 },
-  "11B": { assigned: 7, resigned: 2, rate2025: 14.3, rate2024: 42.9 },
-  "10A": { assigned: 5, resigned: 0, rate2025: 60.0, rate2024: 16.7 },
-  "10B": { assigned: 7, resigned: 3, rate2025: 14.3, rate2024: 16.7 },
-  "9A": { assigned: 6, resigned: 2, rate2025: 71.4, rate2024: 0.0 },
-  "9B": { assigned: 7, resigned: 0, rate2025: 83.3, rate2024: 0.0 },
-  "8A": { assigned: 7, resigned: 1, rate2025: 25.0, rate2024: 16.7 },
-  "8B": { assigned: 5, resigned: 1, rate2025: 20.0, rate2024: 0.0 },
-  "7A": { assigned: 7, resigned: 0, rate2025: 20.0, rate2024: 33.3 },
-  "7B": { assigned: 7, resigned: 1, rate2025: 0.0, rate2024: 0.0 },
-  MFICU: { assigned: 5, resigned: 0, rate2025: 0.0, rate2024: 0.0 },
-  NICU: { assigned: 11, resigned: 0, rate2025: 0.0, rate2024: 21.7 },
-  EICU: { assigned: 5, resigned: 0, rate2025: 0.0, rate2024: 0.0 },
-  MICU: { assigned: 6, resigned: 0, rate2025: 0.0, rate2024: 0.0 },
-  SICU: { assigned: 6, resigned: 0, rate2025: 17.6, rate2024: 25.0 },
-  수술실: { assigned: 8, resigned: 1, rate2025: 22.2, rate2024: 43.8 },
-  회복실: { assigned: 5, resigned: 2, rate2025: 0.0, rate2024: 0.0 },
-  응급실: { assigned: 5, resigned: 1, rate2025: 0.0, rate2024: 0.0 },
-};
-
 function getDeptRate2026(deptName) {
   const d = DEPT_RESIGNATION[deptName];
   return d.assigned === 0 ? 0 : (d.resigned / d.assigned) * 100;
@@ -204,4 +233,113 @@ function getDeptRate2026(deptName) {
 
 function getAllDeptNames() {
   return DEPT_GROUPS.flatMap((g) => Object.keys(g.depts));
+}
+
+/**
+ * 시트[26신규명단] 원본 행(레코드) 목록으로부터 대시보드에 필요한 모든 집계값을 다시 계산해
+ * 위의 전역 변수들을 갱신한다. live-sync.js 가 구글 시트를 읽어온 뒤 호출한다.
+ * @param {Array<{dept:string, assignDate:string, resignDate:string, resignPeriod:string, reason:string, school:string, grade:string, percentile:number|null}>} records
+ */
+function applyRosterRecords(records) {
+  DATES = [...new Set(records.map((r) => r.assignDate))].sort();
+
+  DEPT_GROUPS = DEPT_GROUP_DEFS.map((group) => {
+    const depts = {};
+    group.deptNames.forEach((deptName) => {
+      depts[deptName] = DATES.map(
+        (date) => records.filter((r) => r.dept === deptName && r.assignDate === date).length
+      );
+    });
+    return { name: group.name, depts };
+  });
+
+  RESIGNATION_BY_DATE = DATES.map(
+    (date) => records.filter((r) => r.assignDate === date && r.resignDate).length
+  );
+
+  RESIGNATION_PERIOD_BY_DATE = DATES.map((date) =>
+    RESIGNATION_PERIOD_LABELS.map(
+      (label) => records.filter((r) => r.assignDate === date && r.resignPeriod === label).length
+    )
+  );
+
+  const resignedRecords = records.filter((r) => r.resignDate);
+
+  const reasonCounts = {};
+  resignedRecords.forEach((r) => {
+    const key = r.reason && r.reason.trim() ? r.reason.trim() : "(미기재)";
+    reasonCounts[key] = (reasonCounts[key] || 0) + 1;
+  });
+  RESIGNATION_REASON_COUNTS = reasonCounts;
+
+  const schoolCounts = {};
+  resignedRecords.forEach((r) => {
+    if (!r.school) return;
+    schoolCounts[r.school] = (schoolCounts[r.school] || 0) + 1;
+  });
+  const schoolEntries = Object.entries(schoolCounts).sort((a, b) => b[1] - a[1]);
+  const majorSchools = schoolEntries.filter(([, count]) => count >= 2);
+  const minorSchools = schoolEntries.filter(([, count]) => count === 1);
+  const newSchoolCounts = {};
+  majorSchools.forEach(([name, count]) => (newSchoolCounts[name] = count));
+  if (minorSchools.length > 0) {
+    newSchoolCounts[`기타(1건씩 ${minorSchools.length}개교)`] = minorSchools.length;
+  }
+  RESIGNATION_SCHOOL_COUNTS = newSchoolCounts;
+
+  const gradeStats = {};
+  GRADE_ORDER.forEach((g) => (gradeStats[g] = { assigned: 0, resigned: 0 }));
+  records.forEach((r) => {
+    if (!gradeStats[r.grade]) return;
+    gradeStats[r.grade].assigned += 1;
+    if (r.resignDate) gradeStats[r.grade].resigned += 1;
+  });
+  GRADE_STATS = gradeStats;
+
+  const highGrades = ["S", "A+", "A", "A-"];
+  const lowGrades = ["B+", "B", "B-"];
+  const sumGroup = (grades) =>
+    grades.reduce(
+      (acc, g) => ({
+        assigned: acc.assigned + gradeStats[g].assigned,
+        resigned: acc.resigned + gradeStats[g].resigned,
+      }),
+      { assigned: 0, resigned: 0 }
+    );
+  GRADE_GROUP_STATS = {
+    "A이상 (S~A-)": sumGroup(highGrades),
+    "B군 (B+~B-)": sumGroup(lowGrades),
+  };
+
+  const withPercentile = records.filter((r) => typeof r.percentile === "number" && !Number.isNaN(r.percentile));
+  const maxBucket = withPercentile.length
+    ? Math.floor(Math.max(...withPercentile.map((r) => r.percentile)) / 10) * 10
+    : 0;
+  const bucketLabels = [];
+  for (let lo = 0; lo <= maxBucket; lo += 10) {
+    bucketLabels.push(`${lo}-${lo + 10}%`);
+  }
+  const bucketStats = {};
+  bucketLabels.forEach((label) => (bucketStats[label] = { assigned: 0, resigned: 0 }));
+  withPercentile.forEach((r) => {
+    const lo = Math.min(Math.floor(r.percentile / 10) * 10, maxBucket);
+    const label = `${lo}-${lo + 10}%`;
+    bucketStats[label].assigned += 1;
+    if (r.resignDate) bucketStats[label].resigned += 1;
+  });
+  PERCENTILE_BUCKET_LABELS = bucketLabels;
+  PERCENTILE_BUCKET_STATS = bucketStats;
+
+  const deptResignation = {};
+  getAllDeptNames().forEach((deptName) => {
+    const deptRecords = records.filter((r) => r.dept === deptName);
+    const hist = HISTORICAL_DEPT_RATES[deptName] || { rate2025: 0, rate2024: 0 };
+    deptResignation[deptName] = {
+      assigned: deptRecords.length,
+      resigned: deptRecords.filter((r) => r.resignDate).length,
+      rate2025: hist.rate2025,
+      rate2024: hist.rate2024,
+    };
+  });
+  DEPT_RESIGNATION = deptResignation;
 }

@@ -1,11 +1,18 @@
-(function () {
+let dateResignChartInst = null;
+let periodChartInst = null;
+let reasonChartInst = null;
+let schoolChartInst = null;
+let gradeChartInst = null;
+let percentileChartInst = null;
+
+function renderResignationPage() {
   const totalByDate = getTotalByDate();
   const resignByDate = RESIGNATION_BY_DATE;
   const rateByDate = totalByDate.map((v, i) => (v === 0 ? 0 : (resignByDate[i] / v) * 100));
 
   const totalAssigned = totalByDate.reduce((a, b) => a + b, 0);
   const totalResigned = resignByDate.reduce((a, b) => a + b, 0);
-  const totalRate = (totalResigned / totalAssigned) * 100;
+  const totalRate = totalAssigned === 0 ? 0 : (totalResigned / totalAssigned) * 100;
 
   const asOfDate = DATES[DATES.length - 1];
   document.getElementById("asOfText").textContent = `기준일 : ${asOfDate} (2026년 1~${DATES.length}차 발령 기준)`;
@@ -17,8 +24,9 @@
   document.getElementById("statRateSub").textContent = `사직인원 ${totalResigned}명 / 발령인원 ${totalAssigned}명`;
 
   // 발령일자별 발령/사직/사직율 콤보 차트
+  if (dateResignChartInst) dateResignChartInst.destroy();
   const ctx1 = document.getElementById("dateResignChart").getContext("2d");
-  new Chart(ctx1, {
+  dateResignChartInst = new Chart(ctx1, {
     type: "bar",
     data: {
       labels: DATES,
@@ -85,6 +93,7 @@
 
   // 발령일자별 상세 표
   const dateBody = document.querySelector("#dateResignTable tbody");
+  dateBody.innerHTML = "";
   DATES.forEach((date, i) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -111,8 +120,9 @@
   const maxIndex = periodTotals.indexOf(periodMax);
   const periodColors = periodTotals.map((_, i) => (i === maxIndex ? BRAND.magenta : "rgba(166, 174, 224, 0.35)"));
 
+  if (periodChartInst) periodChartInst.destroy();
   const ctx2 = document.getElementById("periodChart").getContext("2d");
-  new Chart(ctx2, {
+  periodChartInst = new Chart(ctx2, {
     type: "bar",
     data: {
       labels: RESIGNATION_PERIOD_LABELS,
@@ -154,10 +164,13 @@
     },
   });
 
+  const insightBox = document.getElementById("insightBox");
   if (totalResigned > 0) {
     const maxPct = (periodMax / totalResigned) * 100;
-    document.getElementById("insightBox").style.display = "flex";
+    insightBox.style.display = "flex";
     document.getElementById("insightText").innerHTML = `<b>${RESIGNATION_PERIOD_LABELS[maxIndex]}</b> 구간이 ${periodMax}명(${maxPct.toFixed(1)}%)으로 가장 많습니다.`;
+  } else {
+    insightBox.style.display = "none";
   }
 
   // 발령일자별 사직발생시기 상세 표
@@ -168,6 +181,7 @@
   periodHead.innerHTML = headHtml;
 
   const periodBody = document.querySelector("#periodTable tbody");
+  periodBody.innerHTML = "";
   DATES.forEach((date, i) => {
     const row = RESIGNATION_PERIOD_BY_DATE[i];
     const rowTotal = row.reduce((a, b) => a + b, 0);
@@ -180,6 +194,7 @@
   });
 
   const periodFoot = document.querySelector("#periodTable tfoot");
+  periodFoot.innerHTML = "";
   const totalRow = document.createElement("tr");
   let totalCells = `<td style="font-weight:700;">합계</td>`;
   periodTotals.forEach((v) => (totalCells += `<td style="font-weight:700;">${v}명</td>`));
@@ -199,8 +214,10 @@
 
   // ── 사직사유 분포 ──
   const reasonEntries = Object.entries(RESIGNATION_REASON_COUNTS);
-  const reasonColors = [BRAND.primary, "rgba(166, 174, 224, 0.35)", BRAND.green, BRAND.link, BRAND.magenta];
-  new Chart(document.getElementById("reasonChart").getContext("2d"), {
+  const reasonPalette = [BRAND.primary, "rgba(166, 174, 224, 0.35)", BRAND.green, BRAND.link, BRAND.magenta];
+  const reasonColors = reasonEntries.map((_, i) => reasonPalette[i % reasonPalette.length]);
+  if (reasonChartInst) reasonChartInst.destroy();
+  reasonChartInst = new Chart(document.getElementById("reasonChart").getContext("2d"), {
     type: "doughnut",
     data: {
       labels: reasonEntries.map(([k]) => k),
@@ -220,7 +237,7 @@
         tooltip: {
           callbacks: {
             label: (c) => {
-              const pct = (c.parsed / totalResigned) * 100;
+              const pct = totalResigned === 0 ? 0 : (c.parsed / totalResigned) * 100;
               return `${c.label}: ${c.parsed}명 (${pct.toFixed(1)}%)`;
             },
           },
@@ -231,7 +248,8 @@
 
   // ── 사직자 출신학교 분포 ──
   const schoolEntries = Object.entries(RESIGNATION_SCHOOL_COUNTS);
-  new Chart(document.getElementById("schoolChart").getContext("2d"), {
+  if (schoolChartInst) schoolChartInst.destroy();
+  schoolChartInst = new Chart(document.getElementById("schoolChart").getContext("2d"), {
     type: "bar",
     data: {
       labels: schoolEntries.map(([k]) => k),
@@ -261,7 +279,8 @@
     const s = GRADE_STATS[g];
     return s.assigned === 0 ? 0 : (s.resigned / s.assigned) * 100;
   });
-  new Chart(document.getElementById("gradeChart").getContext("2d"), {
+  if (gradeChartInst) gradeChartInst.destroy();
+  gradeChartInst = new Chart(document.getElementById("gradeChart").getContext("2d"), {
     type: "bar",
     data: {
       labels: GRADE_ORDER,
@@ -302,6 +321,7 @@
   });
 
   const gradeTableBody = document.querySelector("#gradeTable tbody");
+  gradeTableBody.innerHTML = "";
   GRADE_ORDER.forEach((g) => {
     const s = GRADE_STATS[g];
     const rate = s.assigned === 0 ? 0 : (s.resigned / s.assigned) * 100;
@@ -310,6 +330,7 @@
     gradeTableBody.appendChild(tr);
   });
   const gradeFoot = document.querySelector("#gradeTable tfoot");
+  gradeFoot.innerHTML = "";
   Object.entries(GRADE_GROUP_STATS).forEach(([label, s]) => {
     const rate = s.assigned === 0 ? 0 : (s.resigned / s.assigned) * 100;
     const tr = document.createElement("tr");
@@ -319,17 +340,23 @@
 
   const aAbove = GRADE_GROUP_STATS["A이상 (S~A-)"];
   const bGroup = GRADE_GROUP_STATS["B군 (B+~B-)"];
-  const aRate = (aAbove.resigned / aAbove.assigned) * 100;
-  const bRate = (bGroup.resigned / bGroup.assigned) * 100;
-  document.getElementById("gradeInsightBox").style.display = "flex";
-  document.getElementById("gradeInsightText").innerHTML = `<b>B군(B+~B-)</b> 사직율이 ${bRate.toFixed(1)}%로, <b>A등급 이상(S~A-)</b> ${aRate.toFixed(1)}%보다 높습니다.`;
+  const gradeInsightBox = document.getElementById("gradeInsightBox");
+  if (aAbove.assigned > 0 && bGroup.assigned > 0) {
+    const aRate = (aAbove.resigned / aAbove.assigned) * 100;
+    const bRate = (bGroup.resigned / bGroup.assigned) * 100;
+    gradeInsightBox.style.display = "flex";
+    document.getElementById("gradeInsightText").innerHTML = `<b>B군(B+~B-)</b> 사직율이 ${bRate.toFixed(1)}%로, <b>A등급 이상(S~A-)</b> ${aRate.toFixed(1)}%보다 ${bRate >= aRate ? "높습니다" : "낮습니다"}.`;
+  } else {
+    gradeInsightBox.style.display = "none";
+  }
 
   // ── 석차백분율 구간별 사직율 ──
   const percentileRates = PERCENTILE_BUCKET_LABELS.map((label) => {
     const s = PERCENTILE_BUCKET_STATS[label];
     return s.assigned === 0 ? 0 : (s.resigned / s.assigned) * 100;
   });
-  new Chart(document.getElementById("percentileChart").getContext("2d"), {
+  if (percentileChartInst) percentileChartInst.destroy();
+  percentileChartInst = new Chart(document.getElementById("percentileChart").getContext("2d"), {
     type: "bar",
     data: {
       labels: PERCENTILE_BUCKET_LABELS,
@@ -370,6 +397,7 @@
   });
 
   const percentileTableBody = document.querySelector("#percentileTable tbody");
+  percentileTableBody.innerHTML = "";
   PERCENTILE_BUCKET_LABELS.forEach((label) => {
     const s = PERCENTILE_BUCKET_STATS[label];
     const rate = s.assigned === 0 ? 0 : (s.resigned / s.assigned) * 100;
@@ -377,4 +405,7 @@
     tr.innerHTML = `<td>${label}</td><td>${s.assigned}명</td><td>${s.resigned}명</td><td>${rate.toFixed(1)}%</td>`;
     percentileTableBody.appendChild(tr);
   });
-})();
+}
+
+renderResignationPage();
+window.renderCurrentPage = renderResignationPage;

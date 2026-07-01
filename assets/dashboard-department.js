@@ -1,4 +1,6 @@
-(function () {
+let rankChartInst = null;
+
+function renderDepartmentPage() {
   const asOfDate = DATES[DATES.length - 1];
   document.getElementById("asOfText").textContent = `기준일 : ${asOfDate} (2026년 1~${DATES.length}차 발령 누적 기준)`;
 
@@ -19,6 +21,7 @@
 
   // 상단 TOP3 사직율 부서 카드
   const rankGrid = document.getElementById("rankGrid");
+  rankGrid.innerHTML = "";
   sortedDesc.slice(0, 3).forEach((d, i) => {
     const card = document.createElement("div");
     card.className = "rank-card";
@@ -39,8 +42,9 @@
   });
 
   // 부서별 사직율 순위 차트 (2026년만)
+  if (rankChartInst) rankChartInst.destroy();
   const ctx = document.getElementById("rankChart").getContext("2d");
-  new Chart(ctx, {
+  rankChartInst = new Chart(ctx, {
     type: "bar",
     data: {
       labels: sortedDesc.map((d) => d.name),
@@ -79,6 +83,8 @@
   // 부서별 상세 표
   const tbody = document.querySelector("#deptDetailTable tbody");
   const tfoot = document.querySelector("#deptDetailTable tfoot");
+  tbody.innerHTML = "";
+  tfoot.innerHTML = "";
   const grand = { assigned: 0, resigned: 0 };
 
   DEPT_GROUPS.forEach((group) => {
@@ -134,4 +140,7 @@
     <td>-</td>
   `;
   tfoot.appendChild(grandRow);
-})();
+}
+
+renderDepartmentPage();
+window.renderCurrentPage = renderDepartmentPage;
