@@ -114,3 +114,40 @@ function getYearTotal() {
 function getResignationPeriodTotals() {
   return sumArrays(RESIGNATION_PERIOD_BY_DATE);
 }
+
+// 부서별 2026년 발령/사직 인원(누적) 및 2025년·2024년 사직율 비교 (시트 원본 기준)
+const DEPT_RESIGNATION = {
+  "14A": { assigned: 8, resigned: 1, rate2025: 0.0, rate2024: 25.0 },
+  "14B": { assigned: 7, resigned: 2, rate2025: 0.0, rate2024: 0.0 },
+  "13A": { assigned: 5, resigned: 0, rate2025: 0.0, rate2024: 0.0 },
+  "13B": { assigned: 6, resigned: 0, rate2025: 0.0, rate2024: 0.0 },
+  "12A": { assigned: 4, resigned: 2, rate2025: 25.0, rate2024: 50.0 },
+  "12B": { assigned: 7, resigned: 1, rate2025: 33.3, rate2024: 33.3 },
+  "11A": { assigned: 5, resigned: 0, rate2025: 50.0, rate2024: 0.0 },
+  "11B": { assigned: 7, resigned: 2, rate2025: 14.3, rate2024: 42.9 },
+  "10A": { assigned: 5, resigned: 0, rate2025: 60.0, rate2024: 16.7 },
+  "10B": { assigned: 7, resigned: 3, rate2025: 14.3, rate2024: 16.7 },
+  "9A": { assigned: 6, resigned: 2, rate2025: 71.4, rate2024: 0.0 },
+  "9B": { assigned: 7, resigned: 0, rate2025: 83.3, rate2024: 0.0 },
+  "8A": { assigned: 7, resigned: 1, rate2025: 25.0, rate2024: 16.7 },
+  "8B": { assigned: 5, resigned: 1, rate2025: 20.0, rate2024: 0.0 },
+  "7A": { assigned: 7, resigned: 0, rate2025: 20.0, rate2024: 33.3 },
+  "7B": { assigned: 7, resigned: 1, rate2025: 0.0, rate2024: 0.0 },
+  MFICU: { assigned: 5, resigned: 0, rate2025: 0.0, rate2024: 0.0 },
+  NICU: { assigned: 11, resigned: 0, rate2025: 0.0, rate2024: 21.7 },
+  EICU: { assigned: 5, resigned: 0, rate2025: 0.0, rate2024: 0.0 },
+  MICU: { assigned: 6, resigned: 0, rate2025: 0.0, rate2024: 0.0 },
+  SICU: { assigned: 6, resigned: 0, rate2025: 17.6, rate2024: 25.0 },
+  수술실: { assigned: 8, resigned: 1, rate2025: 22.2, rate2024: 43.8 },
+  회복실: { assigned: 5, resigned: 2, rate2025: 0.0, rate2024: 0.0 },
+  응급실: { assigned: 5, resigned: 1, rate2025: 0.0, rate2024: 0.0 },
+};
+
+function getDeptRate2026(deptName) {
+  const d = DEPT_RESIGNATION[deptName];
+  return d.assigned === 0 ? 0 : (d.resigned / d.assigned) * 100;
+}
+
+function getAllDeptNames() {
+  return DEPT_GROUPS.flatMap((g) => Object.keys(g.depts));
+}
