@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>신규간호사 발령현황 대시보드</title>
+<link rel="stylesheet" href="assets/style.css" />
+<script src="assets/chart.umd.js"></script>
+</head>
+<body>
+
+<header class="top-nav">
+  <div class="brand">2026 신규간호사 인력 대시보드</div>
+  <nav class="tabs">
+    <a href="index.html" class="active">① 발령 현황</a>
+    <a href="pages/resignation-analysis.html">② 사직 분석</a>
+    <a href="pages/department-resignation.html">③ 부서별 사직 분석</a>
+  </nav>
+</header>
+
+<main>
+  <h1 class="page-title">신규간호사 발령 현황</h1>
+  <p class="page-sub" id="asOfText">기준일 : -</p>
+
+  <section class="summary-grid">
+    <div class="card hero-card">
+      <div class="label">2026년 신규간호사 발령 인원 (누적)</div>
+      <div class="value-row">
+        <span class="big-number" id="heroTotal">-</span><span class="unit">명</span>
+        <span class="chip" id="heroRound">발령 -회차 진행</span>
+      </div>
+      <div class="rounds" id="roundBadges"></div>
+    </div>
+
+    <div class="card compare-card">
+      <div class="label">연도별 발령 인원 비교</div>
+      <div class="compare-rows" id="compareRows"></div>
+    </div>
+  </section>
+
+  <section class="chart-table-grid">
+    <div class="panel">
+      <h2>발령일자별 총 발령 인원</h2>
+      <div class="chart-wrap">
+        <canvas id="dateChart"></canvas>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>발령일자별 발령 인원 상세</h2>
+      <table id="dateTable">
+        <thead>
+          <tr><th>발령 회차</th><th>발령일자</th><th>발령인원</th><th>누적인원</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p class="legend-note">누적인원 = 2026년 1월 1일 이후 발령 인원의 누계</p>
+    </div>
+  </section>
+
+  <section class="panel dept-table-section">
+    <h2 class="section-title">발령일자별 세부부서 발령 현황</h2>
+    <p class="section-sub">일반병동 · 통합병동 · 중환자 · 수술회복 · 응급 구분별 발령일자별 발령인원 및 누적 발령인원</p>
+    <div class="dept-table-wrap">
+      <table class="dept-table" id="deptTable">
+        <thead>
+          <tr id="deptTableHeadRow"></tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot></tfoot>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script src="assets/data.js"></script>
+<script src="assets/dashboard-assignment.js"></script>
+</body>
+</html>
