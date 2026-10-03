@@ -2,7 +2,7 @@
 // 이 파일만 고치면 연결 주소와 비교 기준을 바꿀 수 있습니다.
 window.DASH_CONFIG = {
   // Apps Script 웹앱 주소 (README.md 2단계에서 복사한 주소, 끝이 /exec)
-  API_URL: '',
+  API_URL: 'https://script.google.com/macros/s/AKfycbwc5zxAp7yP95XZmlEhLCVEZrtlzZ8_xMTVWn1y7gKYV6iSpH8otHqx5jFXSMv7u8Pn/exec',
 
   // 관리 목표 사직율 (0.20 = 20%)
   TARGET: 0.20,
