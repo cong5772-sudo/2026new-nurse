@@ -1,0 +1,948 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0b6b6a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b6b6a'/%3E%3Cpath d='M9 22V10h3l5 7.5V10h3v12h-3l-5-7.5V22z' fill='%23fff'/%3E%3C/svg%3E">
+<title>신규간호사 발령 유지관리 시스템</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* 기본 리셋 */
+body{margin:0}[hidden]{display:none!important}img{max-width:100%}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+/* Layout: 좌측 고정 내비 + 우측 작업면(필터 → KPI → 패널 그리드). 휴대폰에서는 내비가 하단 탭바로 바뀜 */
+:root{
+  --bg:#eef3f3; --surface:#fbfdfd; --sunk:#e4ecec; --ink:#0f1c1e; --ink2:#46585b; --muted:#6f8285;
+  --line:#d6e1e2; --line2:#c2d0d1; --accent:#0b6b6a; --accent-ink:#ffffff; --accent-soft:#d3e9e7;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --seq:#2a78d6; --warm:#eb6834;
+  --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --crit:#d03b3b; --good-ink:#006300; --crit-ink:#b42d2d;
+  --f-ui:"IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --f-num:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0a1112; --surface:#121b1c; --sunk:#0e1617; --ink:#e9f1f1; --ink2:#b3c3c4; --muted:#83979a;
+    --line:#223032; --line2:#2e3f41; --accent:#4fb3ad; --accent-ink:#06201f; --accent-soft:#163837;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --seq:#3987e5; --warm:#d95926;
+    --good-ink:#2fc22f; --crit-ink:#ef7a7a;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0a1112; --surface:#121b1c; --sunk:#0e1617; --ink:#e9f1f1; --ink2:#b3c3c4; --muted:#83979a;
+  --line:#223032; --line2:#2e3f41; --accent:#4fb3ad; --accent-ink:#06201f; --accent-soft:#163837;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --seq:#3987e5; --warm:#d95926;
+  --good-ink:#2fc22f; --crit-ink:#ef7a7a;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+.app{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100%}
+.nav{position:sticky;top:env(safe-area-inset-top,0px);height:100vh;display:flex;flex-direction:column;gap:24px;padding:24px 16px;border-right:1px solid var(--line);background:var(--surface)}
+.brand{display:grid;gap:2px;padding-inline:8px}
+.brand small{font-size:11px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.brand b{font-size:16px;font-weight:700;line-height:1.3}
+.navlist{display:grid;gap:4px}
+.navbtn{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:0;border-radius:8px;background:none;text-align:left;cursor:pointer;color:var(--ink2);font-weight:500}
+.navbtn .k{font-family:var(--f-num);font-size:11px;color:var(--muted);width:18px}
+.navbtn:hover{background:var(--sunk);color:var(--ink)}
+.navbtn[aria-current="page"]{background:var(--accent);color:var(--accent-ink)}
+.navbtn[aria-current="page"] .k{color:inherit;opacity:.75}
+.navfoot{margin-top:auto;display:grid;gap:6px;padding:12px;border-radius:8px;background:var(--sunk);font-size:12px;color:var(--ink2)}
+.navfoot b{color:var(--ink);font-weight:600}
+
+.main{padding:28px clamp(16px,3vw,40px) 64px;display:grid;gap:20px;align-content:start;min-width:0}
+.head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.head h1{margin:0;font-size:24px;font-weight:700;letter-spacing:-.02em;text-wrap:balance}
+.head p{margin:4px 0 0;color:var(--ink2);max-width:62ch}
+.stamp{display:flex;gap:8px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line2);border-radius:999px;font-size:12px;color:var(--ink2);background:var(--surface);white-space:nowrap}
+.pill .dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.pill .dot[data-state="live"]{background:var(--good)}.pill .dot[data-state="stale"]{background:var(--warn)}.pill .dot[data-state="error"]{background:var(--crit)}
+.msg h2{margin:0;font-size:16px}.msg p{margin:0;color:var(--ink2)}
+
+.filters{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;padding:12px 16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.fgroup{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.flabel{font-size:12px;color:var(--muted);letter-spacing:.04em;white-space:nowrap;flex:none}
+.dshort{display:none;font-weight:400}
+.seg{display:flex;flex-wrap:wrap;gap:4px}
+.chip{border:1px solid var(--line2);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:13px;cursor:pointer;color:var(--ink2)}
+.chip:hover{border-color:var(--accent);color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--ink);font-weight:600}
+
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.kpi{padding:16px 18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);display:grid;gap:6px;align-content:start}
+.kpi .lab{font-size:12px;color:var(--ink2);font-weight:500}
+.kpi .val{font-family:var(--f-num);font-size:30px;font-weight:600;line-height:1.1;letter-spacing:-.03em}
+.kpi .val small{font-family:var(--f-ui);font-size:14px;font-weight:500;color:var(--ink2);margin-left:2px;letter-spacing:0}
+.kpi .sub{font-size:12px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px}
+.panel{grid-column:span 6;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:grid;gap:14px;align-content:start;min-width:0}
+.panel.w12{grid-column:span 12}.panel.w8{grid-column:span 8}.panel.w4{grid-column:span 4}.panel.w7{grid-column:span 7}.panel.w5{grid-column:span 5}
+.ph{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.ph h2{margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em}
+.ph p{margin:2px 0 0;font-size:12px;color:var(--muted)}
+.note{font-size:12px;color:var(--ink2);background:var(--sunk);border-radius:8px;padding:10px 12px;line-height:1.6}
+.note b{color:var(--ink)}
+
+/* status */
+.st{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;white-space:nowrap}
+.st i{font-style:normal;display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;font-size:10px;color:#fff;line-height:1}
+.st.crit i{background:var(--crit)}.st.warn i{background:var(--warn);color:#2b1d00}.st.good i{background:var(--good)}.st.none i{background:var(--line2)}
+.st.crit{color:var(--crit-ink)}.st.good{color:var(--good-ink)}.st.warn{color:var(--ink)}
+
+/* vertical bars */
+.vb{display:grid;gap:6px}
+.vb .plot{position:relative;height:var(--h,190px);display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:10px;align-items:end;border-bottom:1px solid var(--line2);padding-top:20px}
+.vb .col{height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;cursor:default}
+.vb .bar{width:min(64px,72%);border-radius:4px 4px 0 0;background:var(--c,var(--s1));min-height:2px;transition:filter .15s}
+.vb .col:hover .bar{filter:brightness(1.12)}
+.vb .v{font-family:var(--f-num);font-size:12px;font-weight:600;color:var(--ink);background:var(--surface);padding:0 3px;border-radius:3px;position:relative;z-index:2}
+.vb .xl{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:10px;text-align:center;font-size:12px;color:var(--ink2)}
+.vb .xl span small{display:block;color:var(--muted);font-size:11px}
+.ref{position:absolute;left:0;right:0;border-top:1.5px dashed var(--rc,var(--crit));pointer-events:none;z-index:1}
+.vb .plot:has(.ref){padding-right:52px}
+.vb:has(.ref) .xl{padding-right:52px}
+.ref span{position:absolute;right:0;bottom:2px;font-size:11px;color:var(--ink2);background:var(--surface);padding:0 4px;border-radius:3px}
+.ref.avg{--rc:var(--muted)}
+
+/* horizontal bars */
+.hb{display:grid;gap:6px}
+.hb .row{display:grid;grid-template-columns:minmax(64px,7.5rem) minmax(0,1fr) 5.5rem;gap:10px;align-items:center;font-size:13px;padding:2px 0;cursor:default}
+.hb .row:hover .track{background:var(--sunk)}
+.hb .lab{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hb .track{position:relative;height:18px;border-radius:4px}
+.hb .fill{position:absolute;left:0;top:2px;bottom:2px;border-radius:0 4px 4px 0;background:var(--c,var(--s1))}
+.hb .fill.thin{background:repeating-linear-gradient(135deg,var(--c,var(--s1)) 0 3px,transparent 3px 6px);outline:1px solid var(--c,var(--s1));outline-offset:-1px}
+.hb .rv{font-family:var(--f-num);font-size:12px;text-align:right;color:var(--ink)}
+.hb .rv small{color:var(--muted);font-size:11px;margin-left:4px}
+.hb .vref{position:absolute;top:-3px;bottom:-3px;border-left:1.5px dashed var(--rc,var(--crit));z-index:1}
+.hb .vref.avg{--rc:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--ink2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:14px;height:0;border-top:1.5px dashed var(--rc,var(--crit))}
+.legend i.sw{width:10px;height:10px;border:0;border-radius:2px;background:var(--c)}
+.legend i.ln{width:16px;height:0;border-top:2px solid var(--c)}
+.legend i.hatch{width:12px;height:10px;border:0;background:repeating-linear-gradient(135deg,var(--muted) 0 2px,transparent 2px 4px);outline:1px solid var(--muted)}
+
+/* tables */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+td.l,th.l{text-align:left}
+thead th{position:sticky;top:0;background:var(--sunk);font-weight:600;font-size:12px;color:var(--ink2)}
+thead th.sort{cursor:pointer;user-select:none}
+thead th.sort:hover{color:var(--ink)}
+thead th .ar{color:var(--muted);font-size:10px;margin-left:3px}
+tbody tr:hover td{background:color-mix(in oklab,var(--accent-soft) 45%,transparent)}
+tfoot td{font-weight:600;background:var(--sunk);border-bottom:0}
+td.num,th.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+td.cell{position:relative}
+.heat{background:color-mix(in oklab,var(--c,var(--seq)) var(--p,0%),var(--surface))}
+.heat.hi{color:#fff}
+.zero{color:var(--muted)}
+.tag{display:inline-block;padding:1px 7px;border-radius:4px;font-size:11px;background:var(--sunk);color:var(--ink2)}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.search{border:1px solid var(--line2);background:var(--surface);border-radius:8px;padding:6px 10px;font-size:13px;width:180px;max-width:100%}
+
+/* cohort timeline */
+.tl{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.tli{position:relative;padding:14px 14px 12px;border:1px solid var(--line);border-radius:8px;display:grid;gap:4px;background:var(--surface)}
+.tli.dim{opacity:.45}
+.tli .no{font-size:12px;font-weight:600;color:var(--accent)}
+.tli .dt{font-family:var(--f-num);font-size:17px;font-weight:600}
+.tli .meta{display:flex;justify-content:space-between;font-size:12px;color:var(--ink2)}
+.tli .bar2{height:6px;border-radius:3px;background:var(--sunk);overflow:hidden;display:flex;gap:2px}
+.tli .bar2 b{background:var(--s1)}.tli .bar2 em{background:var(--crit)}
+.tli.next{border-style:dashed;background:transparent}
+.tli.next .dt{color:var(--muted)}
+
+/* tabs (page 4) */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{border:0;background:none;padding:10px 14px;cursor:pointer;color:var(--ink2);font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+.tab small{display:block;font-size:11px;color:var(--muted);font-weight:400}
+
+.finds{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.find{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.find .st{grid-row:span 2;align-self:start;margin-top:2px}
+.find b{font-size:13px}
+.find p{margin:0;font-size:12px;color:var(--ink2)}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+.tile{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:2px;border-left:4px solid var(--tc,var(--line2));cursor:default}
+.tile b{font-size:14px}
+.tile .num{font-size:18px;font-weight:600}
+.tile small{color:var(--muted);font-size:11px}
+.tile.crit{--tc:var(--crit)}.tile.warn{--tc:var(--warn)}.tile.good{--tc:var(--good)}
+
+.stack{grid-column:span 5;display:grid;gap:12px;align-content:start;min-width:0}.stack>.panel{grid-column:auto}
+.gt th,.gt td{text-align:center;padding:11px 12px}.gt th:first-child,.gt td:first-child{text-align:left;padding-left:14px}
+.gt th.coh{color:var(--accent)}
+.gt tr.gh td{background:var(--accent-soft);color:var(--accent);font-weight:600;font-size:13px}
+.gt tr.sub td{background:var(--sunk);font-weight:700}
+.gt td.cum{color:var(--ink2)}.gt tr.sub td.cum,.gt tr.sub td:last-child{color:var(--ink)}
+.gt tfoot td{border-top:2px solid var(--ink2)}
+.pbar{display:grid;gap:10px;padding:14px 16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.prow{display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;justify-content:space-between}
+.ptabs{display:inline-flex;gap:2px;padding:3px;border-radius:9px;background:var(--sunk);max-width:100%;overflow-x:auto}
+.ptab{border:0;background:none;padding:7px 18px;border-radius:7px;cursor:pointer;color:var(--ink2);font-weight:500;white-space:nowrap}
+.ptab:hover{color:var(--ink)}
+.ptab[aria-selected="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.pchips{display:flex;gap:4px;align-items:center;overflow-x:auto;padding-bottom:2px}
+.pchips .chip{flex:none}
+.pnav{flex:none;width:30px;height:30px;border:1px solid var(--line2);border-radius:50%;background:var(--surface);cursor:pointer;font-size:16px;line-height:1;color:var(--ink2)}
+.pnav:disabled{opacity:.35;cursor:default}
+.prange{font-size:13px;color:var(--ink2)}.prange b{font-family:var(--f-num);color:var(--ink);margin-left:4px}
+.pdef{font-size:12px;color:var(--muted)}
+.vb .col[data-pk]{cursor:pointer}
+.cmp{display:flex;flex-wrap:wrap;gap:4px 14px;width:100%;margin-top:6px;padding-top:8px;border-top:1px dashed var(--line2);font-size:12px;color:var(--ink2)}
+.cmp b{color:var(--ink);font-weight:600}
+.chip.ghost{border-style:dashed;color:var(--muted)}
+.psep{flex:none;width:1px;height:20px;background:var(--line2);margin-inline:4px}
+.phint{flex:none;font-size:11px;color:var(--muted);margin-left:4px}
+.hero{border-color:var(--line2)}
+.dt thead th{position:static}
+.dt .band th{background:var(--surface);font-size:11px;color:var(--muted);letter-spacing:.04em;border-bottom:1px solid var(--line);padding:6px 10px}
+.dt th.bd{text-align:center}
+.dt th.prevband,.dt .band th.prevband{background:color-mix(in oklab,var(--accent-soft) 60%,var(--sunk));color:var(--ink)}
+.dt td.prev{background:color-mix(in oklab,var(--accent-soft) 32%,transparent);color:var(--ink2)}
+.dt td.prev.hot{color:var(--crit-ink);font-weight:600}
+.dt .rc{white-space:nowrap}
+.rc .mb{display:inline-block;vertical-align:middle;width:52px;height:6px;margin-right:8px;border-radius:3px;background:var(--sunk);overflow:hidden}
+.rc .mb i{display:block;height:100%;border-radius:3px}
+.dl{font-family:var(--f-num);font-size:12px;font-weight:600}.dl.up{color:var(--crit-ink)}.dl.dn{color:var(--good-ink)}
+b.rd{color:var(--crit-ink)}
+.yrs{display:grid;gap:1px}
+.yrow{display:grid;grid-template-columns:4.2rem minmax(0,1fr) 3.4rem 3.4rem 3.4rem;gap:10px;align-items:center;font-size:13px;padding:3px 0;cursor:default}
+.yrow .num{text-align:right}
+.yrow:hover .ytrack{background:var(--sunk)}
+.yhead{font-size:11px;color:var(--muted);padding:0;cursor:auto}
+.yg{font-size:12px;font-weight:600;color:var(--accent);padding:12px 0 3px;border-bottom:1px solid var(--line);margin-bottom:2px}
+.ytrack{position:relative;height:20px;border-radius:4px}
+.ytrack .vref{position:absolute;top:0;bottom:0;border-left:1.5px dashed var(--crit);z-index:1}
+.yfill{position:absolute;left:0;top:4px;bottom:4px;border-radius:0 4px 4px 0;background:var(--c)}
+.mk{position:absolute;top:50%;z-index:2}
+.mk.m25{width:9px;height:9px;background:var(--ink);border:1.5px solid var(--surface);transform:translate(-50%,-50%) rotate(45deg)}
+.mk.m24{width:11px;height:11px;border-radius:50%;background:var(--surface);border:2px solid var(--ink2);transform:translate(-50%,-50%)}
+.legend i.mk-l{display:inline-block}
+.legend i.mk-l.m25{width:8px;height:8px;border:0;background:var(--ink);transform:rotate(45deg)}
+.legend i.mk-l.m24{width:10px;height:10px;border-radius:50%;border:2px solid var(--ink2);background:var(--surface)}
+.y26{font-weight:600}.y25,.y24{color:var(--ink2)}
+@media (max-width:820px){.yrow{grid-template-columns:3.4rem minmax(0,1fr) 2.9rem 2.9rem 2.9rem;gap:6px;font-size:12px}}
+
+.filters{position:sticky;top:env(safe-area-inset-top,0px);z-index:15;box-shadow:0 2px 10px rgba(15,28,30,.06)}
+.tbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
+.ht th,.ht td{padding:7px 8px}
+@media (max-width:820px){.dfull{display:none}.dshort{display:inline}.gt tbody td:first-child,.gt tfoot td:first-child,.gt thead th:first-child{position:sticky;left:0;z-index:2;background:var(--surface)}.gt tr.sub td:first-child,.gt tfoot td:first-child{background:var(--sunk)}.gt thead th:first-child{background:var(--sunk)}.gt tr.gh td:first-child{background:var(--accent-soft)}.filters{padding:10px 12px;gap:8px}.filters .fgroup{flex-wrap:nowrap;overflow-x:auto;max-width:100%}.filters .seg{flex-wrap:nowrap}.filters .chip{flex:none}}
+.dt2 thead th{position:static}
+.dt2 .band th{background:var(--surface);color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--line)}
+.dt2 thead tr:last-child th{font-size:12px}
+.dt2 th .d{font-weight:400;color:var(--muted)}
+.dt2 .ys{border-left:1px solid var(--line2)}
+.dt2 th.y6h{color:var(--ink)}
+.dt2 td.y6 b{font-size:14px}
+.dt2 td.yp{color:var(--ink2)}
+.dt2 .hot{color:var(--crit-ink);font-weight:600}
+.dt2 .of{color:var(--muted)}
+.dt2 .dl{margin-left:6px;font-size:11px}.dl.eq{color:var(--muted)}
+.dt2 tr.t-crit td:first-child{box-shadow:inset 3px 0 0 var(--crit)}
+.dt2 tr.t-warn td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
+.sig{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink);white-space:nowrap}
+.sig i{width:9px;height:9px;border-radius:50%;background:var(--line2)}
+.sig.crit i{background:var(--crit)}.sig.warn i{background:var(--warn)}.sig.good i{background:var(--good)}
+.split{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px;align-items:center}
+@media (max-width:1100px){.split{grid-template-columns:1fr}}
+.mt th,.mt td{padding:7px 10px;font-size:12.5px}
+.mt tr.top td{background:color-mix(in oklab,var(--s2) 10%,transparent)}
+.mt tr.zrow td{color:var(--muted)}
+.calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
+.calc label{display:grid;gap:4px;font-size:12px;color:var(--ink2)}
+.calc input{border:1px solid var(--line2);background:var(--surface);border-radius:8px;padding:8px 10px;font-family:var(--f-num);font-size:16px;width:100%}
+.calc .out{padding:10px 14px;border-radius:8px;background:var(--accent-soft);display:grid;gap:2px}
+.calc .out b{font-family:var(--f-num);font-size:26px;line-height:1.1}
+.calc .out small{font-size:12px;color:var(--ink2)}
+
+.locked{border:1px dashed var(--line2);border-radius:8px;padding:20px;display:grid;gap:8px;justify-items:start;color:var(--ink2);font-size:13px;background:repeating-linear-gradient(135deg,transparent 0 10px,color-mix(in oklab,var(--sunk) 60%,transparent) 10px 11px)}
+.locked b{color:var(--ink)}
+
+#tip{position:fixed;z-index:50;pointer-events:none;max-width:260px;padding:8px 10px;border-radius:6px;background:var(--ink);color:var(--bg);font-size:12px;line-height:1.5;white-space:pre-line;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+svg text{font-family:var(--f-ui)}
+
+@media (max-width:1100px){
+  .panel,.panel.w7,.panel.w5,.panel.w8,.panel.w4,.stack{grid-column:span 12}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr}
+  .nav{position:fixed;inset:auto 0 0 0;top:auto;height:auto;z-index:20;flex-direction:row;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));border-right:0;border-top:1px solid var(--line)}
+  .brand,.navfoot{display:none}
+  .navlist{grid-template-columns:repeat(3,1fr);width:100%}
+  .navbtn{flex-direction:column;gap:2px;padding:6px 4px;font-size:12px;text-align:center;justify-content:center}
+  .navbtn .k{display:none}
+  .main{padding-bottom:96px}
+  .head h1{font-size:20px}
+  .kpi .val{font-size:24px}
+  .hb .row{grid-template-columns:minmax(56px,5.5rem) minmax(0,1fr) 4.8rem}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <nav class="nav" aria-label="페이지">
+    <div class="brand"><small>해운대백병원 간호국</small><b>신규간호사<br>발령 유지관리 시스템</b></div>
+    <div class="navlist" role="list">
+      <button class="navbtn" data-page="p1" id="nav-p1"><span class="k">01</span>발령현황</button>
+      <button class="navbtn" data-page="p2" id="nav-p2"><span class="k">02</span>사직분석</button>
+      <button class="navbtn" data-page="p3" id="nav-p3"><span class="k">03</span>부서별 사직</button>
+    </div>
+    <div class="navfoot">
+      <span>데이터 원본 <b id="src">–</b></span>
+      <span>사직정보 자동 갱신 <b>매일 17:00</b></span>
+      <span>관리 목표 사직율 <b>20% 이하</b></span>
+    </div>
+  </nav>
+
+  <main class="main">
+    <header class="head">
+      <div><h1 id="pt">발령현황</h1><p id="ps"></p></div>
+      <div class="stamp">
+        <span class="pill"><span class="dot" id="live-dot"></span>기준일 <b class="num" id="today">–</b></span>
+        <span class="pill">시트 갱신 <b class="num" id="upd">–</b></span>
+      </div>
+    </header>
+
+    <section class="filters" aria-label="조회 조건">
+      <div class="fgroup"><span class="flabel">발령회차</span><div class="seg" id="f-c"></div></div>
+      <div class="fgroup"><span class="flabel">부서군</span><div class="seg" id="f-g"></div></div>
+    </section>
+
+    <div id="view"></div>
+  </main>
+</div>
+<div id="tip" hidden></div>
+
+<script src="config.js"></script>
+<script>
+const CFG = window.DASH_CONFIG || {};
+const TARGET = CFG.TARGET ?? 0.20;
+const PREV_ALL = CFG.PREV_ALL || {};
+const pa = y => PREV_ALL[y] || {};
+const _now = new Date();
+const TODAY = new Date(_now.getFullYear(), _now.getMonth(), _now.getDate());
+// 아래 값은 API 응답을 받은 뒤 setData()에서 채운다
+let A = null, PREV = {}, GROUPS = [], GNAMES = [], DPOS = {}, COH = [], DAY0, Y0, Y1, Y2;
+const grpOf = d => DPOS[d]?.[2] ?? '기타';
+function setData(data){
+  A = data;
+  GROUPS = data.groups; GNAMES = GROUPS.map(g => g[0]);
+  DPOS = {}; GROUPS.forEach(([g, ds], gi) => ds.forEach((d, i) => DPOS[d] = [gi, i, g]));
+  COH = [...new Set(Object.keys(A.dept).map(k => k.split('|')[0]))].sort();
+  DAY0 = new Date(COH[0] + 'T00:00:00');
+  Y0 = +COH.at(-1).slice(0, 4); Y1 = Y0 - 1; Y2 = Y0 - 2;
+  PREV = {};
+  for (const [d, v] of Object.entries(data.prev?.dept || {})) PREV[d] = [v[Y2] ?? NaN, v[Y1] ?? NaN]; // [2년 전, 1년 전]
+  if (!GNAMES.includes(S.g)) S.g = 'all';
+  if (!COH.includes(S.c)) S.c = 'all';
+}
+const SER = i => ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)', 'var(--s5)', 'var(--s6)'][i % 6];
+const cLab = c => (COH.indexOf(c) + 1) + '차';
+const cShort = c => c.slice(5).replace('-', '.');
+const S = { c:'all', g:'all', page:'p1', tab:'hr', sort:{k:'tot',dir:-1}, q:'' };
+
+const pct = (x, d=1) => isFinite(x) ? (x*100).toFixed(d) + '%' : '–';
+const inC = c => S.c === 'all' || S.c === c;
+const inG = g => S.g === 'all' || S.g === g;
+const days = (a, b) => Math.round((b - a) / 864e5);
+const addDays = (s, n) => { const d = new Date(s + 'T00:00:00'); d.setDate(d.getDate() + n); return d; };
+const fmtD = d => `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+const esc = s => String(s).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+
+function deptOrder(a, b){
+  const pa = DPOS[a] || [99, 0], pb = DPOS[b] || [99, 0];
+  return pa[0] - pb[0] || pa[1] - pb[1] || a.localeCompare(b);
+}
+function depts(){
+  const m = {};
+  for (const [k, [p, r]] of Object.entries(A.dept)){
+    const [c, d] = k.split('|'); const g = grpOf(d);
+    if (!inG(g)) continue;
+    m[d] ??= { d, g, by:{}, p:0, r:0 };
+    m[d].by[c] = [p, r];
+    if (inC(c)){ m[d].p += p; m[d].r += r; }
+  }
+  return Object.values(m).sort((a, b) => deptOrder(a.d, b.d));
+}
+function facet(obj){
+  const m = {};
+  for (const [k, [p, rd]] of Object.entries(obj)){
+    const [c, g, key] = k.split('|');
+    if (!inC(c) || !inG(g)) continue;
+    m[key] ??= [0, 0]; m[key][0] += p; m[key][1] += rd.length;
+  }
+  return m;
+}
+// res row: [cohort, group, 사직발생기간, 사유, 사직 경과월(1=1개월 이내), 근속일, 인원]
+const resF = () => A.res.filter(r => inC(r[0]) && inG(r[1]));
+function totals(){
+  let p = 0, r = 0; for (const d of depts()){ p += d.p; r += d.r; } return { p, r };
+}
+function byCohort(){
+  return COH.map(c => {
+    let p = 0, r = 0;
+    for (const [k, [pp, rr]] of Object.entries(A.dept)){ const [cc, d] = k.split('|'); if (cc === c && inG(grpOf(d))){ p += pp; r += rr; } }
+    return { c, p, r };
+  });
+}
+function tier(rate, n, prev){
+  if (!n) return 'none';
+  if (rate >= 0.4 || (prev && prev[1] > 0.3 && rate > 0.3)) return 'crit';
+  if (rate >= TARGET) return 'warn';
+  return 'good';
+}
+const TIER = { crit:['!','위험'], warn:['▲','주의'], good:['✓','안정'], none:['–','해당 없음'] };
+const stBadge = t => `<span class="st ${t}"><i aria-hidden="true">${TIER[t][0]}</i>${TIER[t][1]}</span>`;
+
+/* ---------- chart builders ---------- */
+function vbars(items, o = {}){
+  const max = o.max ?? Math.max(...items.map(i => i.v), 0.0001);
+  const refs = (o.refs || []).map(r => `<div class="ref ${r.cls||''}" style="bottom:${r.v/max*100}%"><span>${esc(r.label)}</span></div>`).join('');
+  return `<div class="vb" style="--n:${items.length};--h:${o.h||190}px">
+    <div class="plot">${refs}${items.map(i => `<div class="col" ${i.attr || ''} data-tip="${esc(i.tip||'')}">
+      <span class="v">${i.vl ?? i.v}</span><div class="bar" style="height:${Math.max(i.v/max*100, .6)}%;--c:${i.c||'var(--s1)'}"></div></div>`).join('')}</div>
+    <div class="xl">${items.map(i => `<span>${esc(i.label)}${i.sub ? `<small>${esc(i.sub)}</small>` : ''}</span>`).join('')}</div></div>`;
+}
+function hbars(items, o = {}){
+  const max = o.max ?? Math.max(...items.map(i => i.v), 0.0001);
+  const refs = (o.refs || []).map(r => `<div class="vref ${r.cls||''}" style="left:${r.v/max*100}%"></div>`).join('');
+  return `<div class="hb">${items.map(i => `<div class="row" data-tip="${esc(i.tip||'')}">
+    <span class="lab">${i.lh ?? esc(i.label)}</span>
+    <div class="track">${refs}<div class="fill ${i.thin?'thin':''}" style="width:${Math.max(i.v/max*100, .5)}%;--c:${i.c||'var(--s1)'}"></div></div>
+    <span class="rv">${i.vl ?? i.v}${i.n != null ? `<small>n=${i.n}</small>` : ''}</span></div>`).join('')}</div>`;
+}
+const refLegend = (avg) => `<div class="legend"><span><i></i>목표 20%</span>${avg != null ? `<span><i style="--rc:var(--muted)"></i>전체 평균 ${pct(avg)}</span>` : ''}</div>`;
+
+function survival(el){
+  const W = Math.max(el.clientWidth, 280), H = 250, L = 44, R = 70, T = 14, B = 32;
+  const res = resF();
+  const series = COH.filter(inC).map(c => {
+    const n = byCohort().find(x => x.c === c).p;
+    const el_m = Math.floor(days(new Date(c + 'T00:00:00'), TODAY) / 30.44);
+    const pts = [];
+    for (let m = 0; m <= el_m; m++){
+      const gone = res.filter(r => r[0] === c && r[4] <= m).reduce((s, r) => s + r[6], 0);
+      pts.push({ m, v: n ? 1 - gone / n : 1, gone, n });
+    }
+    return { c, pts, col: SER(COH.indexOf(c)) };
+  });
+  const maxM = Math.max(9, ...series.map(s => s.pts.length - 1));
+  const minV = Math.min(0.7, Math.floor(Math.min(...series.flatMap(s => s.pts.map(p => p.v))) * 10) / 10);
+  const x = m => L + (W - L - R) * m / maxM, y = v => T + (H - T - B) * (1 - (v - minV) / (1 - minV));
+  let g = '';
+  for (let v = minV; v <= 1.0001; v += 0.1){
+    g += `<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/>
+          <text x="${L-8}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${Math.round(v*100)}%</text>`;
+  }
+  for (let m = 0; m <= maxM; m++) g += `<text x="${x(m)}" y="${H-10}" text-anchor="middle" font-size="11" fill="var(--muted)">${m}</text>`;
+  g += `<text x="${W-R+8}" y="${H-10}" font-size="11" fill="var(--muted)">개월</text>`;
+  g += `<line x1="${L}" x2="${W-R}" y1="${y(minV)}" y2="${y(minV)}" stroke="var(--line2)"/>`;
+  g += `<rect x="${x(1)}" y="${T}" width="${x(3)-x(1)}" height="${H-T-B}" fill="var(--crit)" opacity=".06"/>
+        <text x="${(x(1)+x(3))/2}" y="${T+12}" text-anchor="middle" font-size="10.5" fill="var(--crit-ink)">조기사직 집중 구간</text>`;
+  for (const s of series){
+    const d = s.pts.map((p, i) => `${i ? 'L' : 'M'}${x(p.m)},${y(p.v)}`).join('');
+    g += `<path d="${d}" fill="none" stroke="${s.col}" stroke-width="2" stroke-linejoin="round"/>`;
+    for (const p of s.pts) g += `<circle cx="${x(p.m)}" cy="${y(p.v)}" r="${p === s.pts.at(-1) ? 4.5 : 3}" fill="${s.col}" stroke="var(--surface)" stroke-width="2"/>
+      <circle cx="${x(p.m)}" cy="${y(p.v)}" r="11" fill="transparent" data-tip="${cLab(s.c)} · 입사 ${p.m}개월\n잔존율 ${pct(p.v)} (누적 사직 ${p.gone}/${p.n}명)"/>`;
+    const e = s.pts.at(-1);
+    g += `<text x="${x(e.m)+8}" y="${y(e.v)+4}" font-size="11.5" font-weight="600" fill="var(--ink)">${cLab(s.c)} ${pct(e.v,0)}</text>`;
+  }
+  el.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="회차별 경과월 잔존율">${g}</svg>`;
+}
+
+/* ---------- pages ---------- */
+const PAGES = {
+  p1: { t:'발령현황', s:'회차별 발령 규모와 부서 배치를 한눈에 확인합니다.' },
+  p2: { t:'사직분석', s:'사직율, 사직 발생 시기, 선발 지표별 사직 경향을 봅니다.' },
+  p3: { t:'부서별 사직분석', s:'부서별 올해 사직 현황을 전년도 사직율과 나란히 비교합니다.' },
+};
+
+const cmp = items => `<span class="cmp">${items.map(([a, b]) => `<span>${a} <b class="num">${b}</b></span>`).join('')}${S.g !== 'all' || S.c !== 'all' ? '<span class="zero">전년도는 전체 기준</span>' : ''}</span>`;
+function kpi(lab, val, unit, sub){ return `<div class="kpi"><span class="lab">${lab}</span><span class="val">${val}${unit ? `<small>${unit}</small>` : ''}</span><span class="sub">${sub||''}</span></div>`; }
+
+function p1(){
+  const t = totals(), bc = byCohort(), ds = depts();
+  const sel = COH.filter(inC), latest = COH.at(-1);
+  const groups = GNAMES.filter(inG).map(g => ({ g, p: ds.filter(d => d.g === g).reduce((s, d) => s + d.p, 0) }));
+  const tl = bc.map(b => {
+    const dd = days(new Date(b.c + 'T00:00:00'), TODAY);
+    return `<div class="tli ${inC(b.c) ? '' : 'dim'}" data-tip="${cLab(b.c)} ${b.c}\n발령 ${b.p}명 · 사직 ${b.r}명 · 재직 ${b.p-b.r}명">
+      <span class="no">${cLab(b.c)}</span><span class="dt">${b.c.replaceAll('-', '.')}</span>
+      <div class="meta"><span>발령 <b class="num">${b.p}</b>명</span><span class="num">D+${dd}</span></div>
+      <div class="bar2" aria-hidden="true"><b style="flex:${b.p-b.r}"></b><em style="flex:${b.r}"></em></div>
+      <div class="meta"><span>재직 ${b.p-b.r}</span><span>사직 ${b.r}</span></div></div>`;
+  }).join('') + `<div class="tli next"><span class="no" style="color:var(--muted)">${COH.length+1}차</span><span class="dt">발령 예정</span><div class="meta"><span>다음 발령일자가 시트에 추가되면 자동으로 표시됩니다</span></div></div>`;
+
+  // dept × cohort table
+  // 구분별 그룹 표: 그룹 머리행 → 부서 → 소계, 마지막에 전체 합계
+  const placed = (d, c) => A.dept[c + '|' + d]?.[0] || 0;
+  const q = S.q.trim().toLowerCase();
+  const sumRow = (list, c) => list.reduce((s, d) => s + placed(d, c), 0);
+  const all = [];
+  let body = '';
+  for (const [g, list] of GROUPS){
+    if (!inG(g)) continue;
+    const rows = list.filter(d => !q || d.toLowerCase().includes(q) || g.includes(q));
+    if (!rows.length) continue;
+    all.push(...rows);
+    body += `<tr class="gh"><td colspan="${sel.length + 2}">${g}</td></tr>`;
+    if (!S.compact) body += rows.map(d => { const tot = sel.reduce((s, c) => s + placed(d, c), 0);
+      return `<tr data-tip="${d} (${g})\n${sel.map(c => `${cLab(c)} ${placed(d, c)}명`).join(' · ')}\n누적 ${tot}명"><td><b>${d}</b></td>${sel.map(c => { const v = placed(d, c); return `<td class="num ${v ? '' : 'zero'}">${v}명</td>`; }).join('')}<td class="num cum">${tot}명</td></tr>`; }).join('');
+    body += `<tr class="sub"><td>${g} 소계</td>${sel.map(c => `<td class="num">${sumRow(rows, c)}명</td>`).join('')}<td class="num">${sel.reduce((s, c) => s + sumRow(rows, c), 0)}명</td></tr>`;
+  }
+  const table = `<div class="tw"><table class="gt"><thead><tr><th>부서</th>
+      ${sel.map(c => `<th class="num coh">${cLab(c)} <span class="dfull">(${c})</span><span class="dshort">${cShort(c)}</span></th>`).join('')}<th class="num">누적인원</th></tr></thead>
+    <tbody>${body || `<tr><td colspan="${sel.length + 2}" class="zero">'${esc(S.q)}'에 해당하는 부서가 없습니다.</td></tr>`}</tbody>
+    ${all.length ? `<tfoot><tr><td>전체 합계 <span style="font-weight:400;color:var(--muted)">${all.length}개 부서</span></td>${sel.map(c => `<td class="num">${sumRow(all, c)}명</td>`).join('')}<td class="num">${sel.reduce((s, c) => s + sumRow(all, c), 0)}명</td></tr></tfoot>` : ''}</table></div>`;
+
+  const tbar = `<div class="tbar"><div class="seg" role="group" aria-label="표 부서 구분">${[['all', '전체'], ...GNAMES.map(g => [g, g])].map(([v, l]) => `<button class="chip" data-fg="${v}" id="tg-${v}" aria-pressed="${S.g === v}">${l}</button>`).join('')}</div>
+    <button class="chip ghost" data-compact="1" id="t-compact" aria-pressed="${!!S.compact}">${S.compact ? '부서별 펼치기' : '소계만 보기'}</button></div>`;
+  return `<div style="display:grid;gap:20px">
+  <div class="kpis">
+    ${kpi('총 발령인원 (누적)', t.p, '명', cmp([[Y1 + '년', (pa(Y1).placed ?? '–') + '명'], [Y2 + '년', (pa(Y2).placed ?? '–') + '명']]))}
+    ${kpi('발령 회차', sel.length, '회', `최근 ${latest.replaceAll('-', '.')} (${cLab(latest)})`)}
+    ${kpi('현재 재직인원', t.p - t.r, '명', `사직 ${t.r}명 제외`)}
+    ${kpi('사직율', pct(t.r / t.p), '', cmp([[Y1 + '년', pct(pa(Y1).rate)], [Y2 + '년', pct(pa(Y2).rate)]]))}
+  </div>
+  <div class="grid">
+    <section class="panel w12"><div class="ph"><div><h2>발령 회차 정보</h2><p>막대: 재직(파랑) · 사직(빨강) 비율, D+는 기준일까지 경과일</p></div></div><div class="tl">${tl}</div></section>
+    <section class="panel w7"><div class="ph"><div><h2>발령일자별 총 발령인원</h2><p>단위: 명</p></div></div>
+      ${vbars(bc.filter(b => inC(b.c)).map(b => ({ label: cLab(b.c), sub: b.c.replaceAll('-', '.'), v: b.p, tip: `${cLab(b.c)} ${b.c}\n발령 ${b.p}명` })))}</section>
+    <section class="panel w5"><div class="ph"><div><h2>부서군별 배치</h2><p>선택한 회차 기준 발령인원</p></div></div>
+      ${hbars(groups.map(x => ({ label: x.g, v: x.p, vl: x.p + '명', tip: `${x.g} 발령 ${x.p}명 (${pct(x.p / t.p)})` })))}
+      <div class="note">${GROUPS.map(([g, l]) => `${g} ${l.length}`).join(' · ')}개 부서로 구분합니다.</div></section>
+    <section class="panel w12"><div class="ph"><div><h2>발령일자별 세부부서 발령현황</h2><p>일반병동 · 통합병동 · 중환자 · 수술회복 · 응급 구분별 발령일자별 발령인원 및 누적 발령인원</p></div>
+      <div class="tools"><input class="search" id="q" type="search" placeholder="부서 검색 (예: 8A, 중환자)" value="${esc(S.q)}" aria-label="부서 검색"></div></div>${tbar}${table}</section>
+  </div></div>`;
+}
+
+const PERIODS = ['1개월 이내','2개월 이내','3개월 이내','6개월 이내','12개월 이내','12개월 이상'];
+const AI_ORDER = ['S','A+','A','A-','B+','B','B-','미기재'];
+const RANK_ORDER = ['0–10%','10–20%','20–30%','30–50%','50% 이상','미기재'];
+
+/* ---------- 기간별 조회 (사직분석) ---------- */
+const MODES = [['now','현재'],['year','연도'],['half','반기'],['quarter','분기'],['month','월']];
+const PS = { mode:'now', keys:[] };
+const keysOf = pr => pr.key.split(',');
+function periodList(mode){
+  if (mode === 'now') return [{ key:'now', label:'현재 (누적)', short:'누적', s:new Date(0), e:TODAY, ivs:[{ s:new Date(0), e:TODAY }] }];
+  const out = [], y0 = DAY0.getFullYear(), y1 = TODAY.getFullYear();
+  const first = new Date(y0, DAY0.getMonth(), 1);
+  for (let y = y0; y <= y1; y++){
+    const parts = mode === 'year' ? [[0, 12, `${y}년`, `${y}년`]]
+      : mode === 'half' ? [[0, 6, `${y} 상반기`, '상반기'], [6, 6, `${y} 하반기`, '하반기']]
+      : mode === 'quarter' ? [0, 1, 2, 3].map(q => [q * 3, 3, `${y} ${q + 1}분기`, `${q + 1}분기`])
+      : Array.from({ length: 12 }, (_, m) => [m, 1, `${y}년 ${m + 1}월`, `${m + 1}월`]);
+    for (const [m0, len, label, short] of parts){
+      const s = new Date(y, m0, 1), e = new Date(y, m0 + len, 0);
+      if (s > TODAY || e < first) continue;
+      out.push({ key:`${mode}-${y}-${m0}`, label, short: y0 === y1 || mode === 'year' ? short : `${String(y).slice(2)}.${short}`, s, e: e > TODAY ? TODAY : e, open: e > TODAY, ivs:[{ s, e: e > TODAY ? TODAY : e }] });
+    }
+  }
+  return out;
+}
+// 기본 선택: 시작한 지 2주가 안 된 기간은 건너뛰고 그 직전 기간
+function defPeriod(L){ const cut = addDays(fmtD(TODAY).replaceAll('.', '-'), -14); return [...L].reverse().find(p => p.s <= cut) || L.at(-1); }
+function curSel(){ const L = periodList(PS.mode), s = L.filter(p => PS.keys.includes(p.key)); return s.length ? s : [defPeriod(L)]; }
+function curPeriod(){
+  const s = curSel(); if (s.length === 1) return s[0];
+  return { key: s.map(x => x.key).join(','), multi: true, label: s.map(x => x.short).join(' + '), short: `${s.length}개 구간`, s: s[0].s, e: s.at(-1).e, open: s.some(x => x.open), ivs: s.flatMap(x => x.ivs) };
+}
+const inPer = (d, pr) => pr.ivs.some(iv => d >= iv.s && d <= iv.e);
+// 회차×부서군 단위로 발령인원과 사직일 목록
+function units(){
+  const u = {};
+  for (const [k, [p]] of Object.entries(A.dept)){
+    const [c, d] = k.split('|'), g = grpOf(d);
+    if (!inC(c) || !inG(g)) continue;
+    (u[c + '|' + g] ??= { c, g, p:0, rd:[] }).p += p;
+  }
+  for (const r of A.res){
+    const x = u[r[0] + '|' + r[1]]; if (!x) continue;
+    for (let i = 0; i < r[6]; i++) x.rd.push(addDays(r[0], r[5]));
+  }
+  return Object.values(u);
+}
+// [기간 중 재직 인원, 기간 중 사직 인원]
+function base(c, p, rd, pr){
+  const cd = new Date(c + 'T00:00:00');
+  if (cd > pr.e) return [0, 0];
+  // 미사직자는 발령일이 마지막 구간 종료 전이면 포함, 사직자는 어느 한 구간이라도 재직 기간이 겹치면 포함
+  return [(p - rd.length) + rd.filter(d => pr.ivs.some(iv => cd <= iv.e && d >= iv.s)).length, rd.filter(d => inPer(d, pr)).length];
+}
+function perTotals(pr, list = units()){
+  let n = 0, r = 0; for (const x of list){ const [a, b] = base(x.c, x.p, x.rd, pr); n += a; r += b; } return { n, r };
+}
+function perCohort(pr){
+  const U = units();
+  return COH.filter(inC).map(c => ({ c, ...perTotals(pr, U.filter(x => x.c === c)) })).filter(x => x.n);
+}
+function facetP(obj, pr){
+  const m = {};
+  for (const [k, [p, ds]] of Object.entries(obj)){
+    const [c, g, key] = k.split('|');
+    if (!inC(c) || !inG(g)) continue;
+    const [a, b] = base(c, p, ds.map(d => addDays(c, d)), pr);
+    if (!a) continue;
+    m[key] ??= [0, 0]; m[key][0] += a; m[key][1] += b;
+  }
+  return m;
+}
+const resP = pr => resF().filter(r => inPer(addDays(r[0], r[5]), pr));
+
+function periodBar(pr, list, idx){
+  return `<section class="pbar" aria-label="조회 기간">
+    <div class="prow">
+      <div class="ptabs" role="tablist">${MODES.map(([k, l]) => `<button class="ptab" role="tab" id="pm-${k}" data-pm="${k}" aria-selected="${PS.mode === k}">${l}</button>`).join('')}</div>
+      <div class="prange">조회 구간 <b>${pr.multi ? esc(pr.label) : `${fmtD(PS.mode === 'now' ? DAY0 : pr.s)} ~ ${fmtD(pr.e)}`}</b>${pr.open ? ' <span class="tag">진행 중</span>' : ''}</div>
+    </div>
+    ${PS.mode !== 'now' ? `<div class="pchips">
+      <button class="pnav" data-pstep="-1" aria-label="이전 기간" ${list.findIndex(x => keysOf(pr).includes(x.key)) <= 0 ? 'disabled' : ''}>‹</button>
+      ${list.map(x => `<button class="chip" data-pk="${x.key}" id="pk-${x.key}" aria-pressed="${keysOf(pr).includes(x.key)}">${x.short}</button>`).join('')}
+      <button class="pnav" data-pstep="1" aria-label="다음 기간" ${list.findLastIndex(x => keysOf(pr).includes(x.key)) >= list.length - 1 ? 'disabled' : ''}>›</button>
+      <span class="psep"></span><button class="chip ghost" data-pall="1" id="p-all">전체 선택</button><button class="chip ghost" data-preset="1" id="p-reset">초기화</button>
+      <span class="phint">여러 개 선택 가능</span></div>` : ''}
+    <span class="pdef">기간 사직율 = 기간 중 사직 인원 ÷ 기간 중 재직한 인원 (기간 시작 전 사직자 제외 · 기간 종료일까지 발령자 포함)</span>
+  </section>`;
+}
+
+function p2(){
+  const list = periodList(PS.mode), pr = curPeriod(), idx = list.findIndex(x => x.key === pr.key);
+  const t = perTotals(pr), rate = t.n ? t.r / t.n : NaN, res = resP(pr);
+  const prev = idx > 0 ? list[idx - 1] : null, pt = prev ? perTotals(prev) : null, prate = pt && pt.n ? pt.r / pt.n : null;
+  const showT = PS.mode === 'now' || PS.mode === 'year';
+  const early = res.filter(r => r[4] <= 3).reduce((s, r) => s + r[6], 0);
+  const avgD = res.reduce((s, r) => s + r[5] * r[6], 0) / Math.max(1, t.r);
+  const per = PERIODS.map(p => ({ p, n: res.filter(r => r[2] === p).reduce((s, r) => s + r[6], 0) }));
+  const ramp = ['#9ec5f4', '#6da7ec', '#3987e5', '#256abf', '#184f95', '#0d366b'];
+  const bc = perCohort(pr);
+  const U = units();
+  const gsP = GNAMES.filter(inG).map(g => ({ g, ...perTotals(pr, U.filter(u => u.g === g)), e: res.filter(r => r[1] === g && r[4] <= 3).reduce((s, r) => s + r[6], 0) })).filter(x => x.n);
+  const gTop = [...gsP].sort((a, b) => b.r / b.n - a.r / a.n)[0];
+  const dpp = (v, base) => { if (!isFinite(v) || !isFinite(base)) return '–'; const d = (v - base) * 100; return Math.abs(d) < .05 ? '<span class="zero">±0.0%p</span>' : `<span class="dl ${d > 0 ? 'up' : 'dn'}">${d > 0 ? '+' : '−'}${Math.abs(d).toFixed(1)}%p</span>`; };
+  const rmax = Math.max(showT ? TARGET * 1.4 : 0.05, ...bc.map(b => b.r / b.n)) * 1.1;
+  const refs = r => [...(showT ? [{ v: TARGET, label: '목표 20%' }] : []), ...(isFinite(r) ? [{ v: r, label: '평균', cls: 'avg' }] : [])];
+  const legend = r => `<div class="legend">${showT ? '<span><i></i>목표 20%</span>' : ''}${isFinite(r) ? `<span><i style="--rc:var(--muted)"></i>기간 평균 ${pct(r)}</span>` : ''}</div>`;
+
+  // 추이: 현재 모드는 월별, 그 외는 선택한 단위 전체
+  const tl = PS.mode === 'now' ? periodList('month') : list;
+  const trend = tl.map(x => ({ x, ...perTotals(x) }));
+  const trendHtml = vbars(trend.map(o => ({ label: o.x.short, sub: o.n ? pct(o.r / o.n) : '–', v: o.r, vl: o.r + '명',
+    c: PS.mode === 'now' || keysOf(pr).includes(o.x.key) ? 'var(--s1)' : 'color-mix(in oklab, var(--s1) 32%, var(--surface))',
+    attr: `data-pk="${o.x.key}"`, tip: `${o.x.label}${o.x.open ? ' (진행 중)' : ''}\n사직 ${o.r}명 / 재직 ${o.n}명 · 기간 사직율 ${o.n ? pct(o.r / o.n) : '–'}\n누르면 선택 / 해제` })), { h: 170 });
+
+  const hmax = Math.max(1, ...bc.flatMap(b => PERIODS.map(p => res.filter(r => r[0] === b.c && r[2] === p).reduce((s, r) => s + r[6], 0))));
+  const heat = `<div class="tw"><table class="ht"><thead><tr><th>발령회차</th>${PERIODS.map(p => `<th class="num">${p.replace(' 이내','').replace(' 이상','+')}</th>`).join('')}<th class="num">사직 합</th><th class="num">3개월 내 비중</th></tr></thead><tbody>
+    ${bc.map(b => { const cnt = PERIODS.map(p => res.filter(r => r[0] === b.c && r[2] === p).reduce((s, r) => s + r[6], 0)); const e3 = cnt[0] + cnt[1] + cnt[2];
+      return `<tr><td><b>${cLab(b.c)}</b> <span style="color:var(--muted)">${cShort(b.c)}</span></td>${cnt.map(v => { const p = Math.round(v / hmax * 80); return v ? `<td class="num heat ${p > 45 ? 'hi' : ''}" style="--p:${p}%;--c:var(--warm)">${v}</td>` : `<td class="num zero">·</td>`; }).join('')}<td class="num"><b>${b.r}</b></td><td class="num">${b.r ? pct(e3 / b.r, 0) : '–'}</td></tr>`; }).join('')}
+    </tbody><tfoot><tr><td>합계</td>${per.map(x => `<td class="num">${x.n}</td>`).join('')}<td class="num">${t.r}</td><td class="num">${t.r ? pct(early / t.r, 0) : '–'}</td></tr></tfoot></table></div>`;
+
+  const fa = facetP(A.ai, pr), fr = facetP(A.rank, pr), fg = facetP(A.gender, pr);
+  const fmax = f => Math.max(showT ? TARGET * 1.4 : 0.05, ...Object.values(f).map(([n, r]) => r / n)) * 1.1;
+  const rateItems = (order, f) => order.filter(k => f[k]).map(k => { const [n, r] = f[k]; return { label: k === '여' || k === '남' ? k + '성' : k, v: r / n, vl: pct(r / n), n, thin: n < 10, c: k === '미기재' ? 'var(--muted)' : 'var(--s1)', tip: `${k}: 기간 중 재직 ${n}명 중 사직 ${r}명 (${pct(r / n)})${n < 10 ? '\n표본 10명 미만, 해석 주의' : ''}` }; });
+  const reasons = {};
+  for (const r of res){ for (const k of r[3].split(',')) reasons[k.trim()] = (reasons[k.trim()] || 0) + r[6]; }
+  const rs = Object.entries(reasons).sort((a, b) => (a[0] === '미기재') - (b[0] === '미기재') || (a[0] === '기타') - (b[0] === '기타') || b[1] - a[1]);
+  const unknown = (reasons['미기재'] || 0) + (reasons['기타'] || 0);
+  const gm = fg['남'], gf = fg['여'];
+  const none = '<p class="note">이 기간에는 사직이 없습니다.</p>';
+
+  const delta = prate == null || !isFinite(rate) ? '' : (() => { const d = (rate - prate) * 100; return `<span style="color:${d > 0 ? 'var(--crit-ink)' : 'var(--good-ink)'}">직전 ${prev.short} 대비 ${d > 0 ? '▲' : d < 0 ? '▼' : ''}${Math.abs(d).toFixed(1)}%p</span>`; })();
+
+  return `<div style="display:grid;gap:20px">
+  ${periodBar(pr, list, idx)}
+  <div class="kpis">
+    ${kpi(PS.mode === 'now' ? '사직율 (누적)' : pr.multi ? '선택 기간 사직율' : '기간 사직율', pct(rate), '', showT && isFinite(rate) ? `${stBadge(rate > TARGET ? 'crit' : 'good')} 목표 대비 ${rate > TARGET ? '+' : ''}${((rate - TARGET) * 100).toFixed(1)}%p ${delta}` : delta || '연간 목표 20%는 현재·연도 조회에서 비교')}
+    ${kpi('사직인원', t.r, '명', `기간 중 재직 ${t.n}명 중`)}
+    ${kpi('조기사직 (3개월 이내)', early, '명', t.r ? `기간 사직자의 <b class="num">${pct(early / t.r)}</b>` : '–')}
+    ${kpi('사직까지 평균 근속', t.r ? Math.round(avgD) : '–', t.r ? '일' : '', t.r ? `약 ${(avgD / 30.44).toFixed(1)}개월` : '해당 기간 사직 없음')}
+  </div>
+  <div class="grid">
+    <section class="panel w12"><div class="ph"><div><h2>${PS.mode === 'now' ? '월별' : MODES.find(m => m[0] === PS.mode)[1] + '별'} 사직 추이</h2><p>막대: 사직 인원 · 아래: 기간 사직율 · 막대를 눌러 여러 기간을 함께 선택</p></div>
+      ${PS.mode !== 'now' ? `<div class="legend"><span><i class="sw" style="--c:var(--s1)"></i>선택한 기간</span><span><i class="sw" style="--c:color-mix(in oklab, var(--s1) 32%, var(--surface))"></i>다른 기간</span></div>` : ''}</div>
+      ${trendHtml}</section>
+    <section class="panel w12"><div class="ph"><div><h2>부서 구분별 사직율</h2><p>${esc(pr.label)} · 기간 중 재직 인원 대비 사직 인원 · 상단 부서군 필터와 함께 적용</p></div>${legend(rate)}</div>
+      ${gsP.length ? `<div class="split">
+        <div>${vbars(gsP.map(x => ({ label: x.g, sub: `${x.r} / ${x.n}명`, v: x.r / x.n, vl: pct(x.r / x.n), c: x === gTop && gsP.length > 1 ? 'var(--s2)' : 'var(--s1)', tip: `${x.g}\n${pr.label}: 사직 ${x.r} / 재직 ${x.n}명 = ${pct(x.r / x.n)}` })), { max: Math.max(showT ? TARGET * 1.4 : .05, ...gsP.map(x => x.r / x.n)) * 1.15, refs: refs(rate), h: 200 })}</div>
+        <div class="tw"><table class="mt"><thead><tr><th>구분</th><th class="num">재직</th><th class="num">사직</th><th class="num">사직율</th><th class="num">3개월 내 사직</th><th class="num">평균 대비</th></tr></thead><tbody>
+          ${gsP.map(x => `<tr${x === gTop && gsP.length > 1 ? ' class="top"' : ''}><td><b>${x.g}</b></td><td class="num">${x.n}명</td><td class="num">${x.r}명</td><td class="num"><b>${pct(x.r / x.n)}</b></td><td class="num">${x.e}명${x.r ? ` <span class="zero">(${pct(x.e / x.r, 0)})</span>` : ''}</td><td class="num">${dpp(x.r / x.n, rate)}</td></tr>`).join('')}
+        </tbody><tfoot><tr><td>합계</td><td class="num">${t.n}명</td><td class="num">${t.r}명</td><td class="num">${pct(rate)}</td><td class="num">${early}명</td><td></td></tr></tfoot></table></div>
+      </div>
+      ${gsP.length > 1 && gTop.r ? `<div class="note">${esc(pr.label)} 기준 <b>${gTop.g}</b>의 사직율(${pct(gTop.r / gTop.n)})이 가장 높습니다. 주황 막대로 표시했습니다.</div>` : ''}` : '<p class="note">이 기간에 재직한 인원이 없습니다.</p>'}</section>
+    <section class="panel w7"><div class="ph"><div><h2>발령일자별 사직율</h2><p>막대 아래: 기간 중 사직 / 재직 인원</p></div>${legend(rate)}</div>
+      ${bc.length ? vbars(bc.map(b => ({ label: cLab(b.c), sub: `${b.r} / ${b.n}명`, v: b.r / b.n, vl: pct(b.r / b.n), c: 'var(--s1)', tip: `${cLab(b.c)} ${b.c}\n${pr.label}: 사직 ${b.r} / 재직 ${b.n}명 = ${pct(b.r / b.n)}` })), { max: rmax, refs: refs(rate), h: 170 }) : '<p class="note">이 기간에 재직한 발령 회차가 없습니다.</p>'}
+      ${bc.length ? `<div class="tw"><table class="mt"><thead><tr><th>회차</th><th class="num">발령일</th><th class="num">재직</th><th class="num">사직</th><th class="num">사직율</th><th class="num">${showT ? '목표 20% 대비' : '평균 대비'}</th></tr></thead><tbody>
+        ${bc.map(b => `<tr><td><b>${cLab(b.c)}</b></td><td class="num">${b.c.replaceAll('-', '.')}</td><td class="num">${b.n}명</td><td class="num">${b.r}명</td><td class="num"><b>${pct(b.r / b.n)}</b></td><td class="num">${dpp(b.r / b.n, showT ? TARGET : rate)}</td></tr>`).join('')}
+        </tbody><tfoot><tr><td>합계</td><td></td><td class="num">${t.n}명</td><td class="num">${t.r}명</td><td class="num">${pct(rate)}</td><td class="num">${showT ? dpp(rate, TARGET) : ''}</td></tr></tfoot></table></div>` : ''}</section>
+    <section class="panel w5"><div class="ph"><div><h2>사직 발생 시기별 분석</h2><p>기간 중 사직자의 발령→사직 기간 · 단위: 명</p></div></div>
+      ${t.r ? vbars(per.map((x, i) => ({ label: x.p.replace(' 이내', '').replace(' 이상', '+'), v: x.n, c: ramp[i], tip: `${x.p}: ${x.n}명 (${pct(x.n / t.r)})` })), { h: 170 }) : none}
+      ${t.r ? (() => { let cum = 0; return `<div class="tw"><table class="mt"><thead><tr><th>발생 시기</th><th class="num">인원</th><th class="num">비율</th><th class="num">누적 비율</th></tr></thead><tbody>
+        ${per.map(x => { cum += x.n; return `<tr${x.n ? '' : ' class="zrow"'}><td>${x.p}</td><td class="num">${x.n}명</td><td class="num">${pct(x.n / t.r)}</td><td class="num">${pct(cum / t.r)}</td></tr>`; }).join('')}
+        </tbody><tfoot><tr><td>합계</td><td class="num">${t.r}명</td><td class="num">100.0%</td><td></td></tr></tfoot></table></div>`; })() : ''}</section>
+    <section class="panel"><div class="ph"><div><h2>회차별 생존곡선</h2><p>입사 후 경과 개월별 잔존율 · 회차 기준이라 조회 기간과 관계없이 전체 표시</p></div>
+      <div class="legend">${COH.filter(inC).map(c => `<span><i class="ln" style="--c:${SER(COH.indexOf(c))}"></i>${cLab(c)}</span>`).join('')}</div></div>
+      <div id="surv"></div>
+      ${survNote()}</section>
+    <section class="panel"><div class="ph"><div><h2>발령일자별 사직발생시기 상세</h2><p>기간 중 사직자 · 진할수록 많음</p></div></div>${t.r ? heat : none}</section>
+    <section class="panel"><div class="ph"><div><h2>AI 역량검사 등급별 사직율</h2><p>빗금: 표본 10명 미만</p></div>${legend()}</div>
+      ${hbars(rateItems(AI_ORDER, fa), { max: fmax(fa), refs: showT ? [{ v: TARGET }] : [] })}</section>
+    <section class="panel"><div class="ph"><div><h2>석차백분율 구간별 사직율</h2><p>값이 작을수록 상위 석차</p></div>${legend()}</div>
+      ${hbars(rateItems(RANK_ORDER, fr), { max: fmax(fr), refs: showT ? [{ v: TARGET }] : [] })}
+      ${PS.mode === 'now' ? '<div class="note">등급·구간별 인원(n)이 적으면 1~2명 차이로 사직율이 크게 달라집니다. 빗금 막대(10명 미만)는 해석에 주의하세요.</div>' : ''}</section>
+    <section class="panel"><div class="ph"><div><h2>사직사유 분포</h2><p>기간 중 사직자 · 복수 사유는 각각 집계</p></div>
+      ${t.r && unknown / t.r > .3 ? `<span class="st warn"><i aria-hidden="true">▲</i>사유 불명 ${pct(unknown / t.r, 0)}</span>` : ''}</div>
+      ${t.r ? hbars(rs.map(([k, v]) => ({ label: k, v, vl: v + '명', c: k === '미기재' || k === '기타' ? 'var(--muted)' : 'var(--s2)', tip: `${k}: ${v}명` }))) : none}
+      ${t.r && unknown / t.r > .3 ? `<div class="note">'기타'와 '미기재'가 사직자의 ${pct(unknown / t.r, 0)}입니다. 퇴직 면담 때 <b>업무적응 · 근무환경 · 인간관계 · 건강 · 이직 · 학업 · 개인/가족</b>처럼 사유 코드를 표준화해야 원인 분석이 가능합니다.</div>` : ''}</section>
+    <section class="panel"><div class="ph"><div><h2>성별 사직율</h2><p>기간 중 재직 인원 기준</p></div>${legend()}</div>
+      ${hbars(rateItems(['여', '남'], fg), { max: fmax(fg), refs: showT ? [{ v: TARGET }] : [] })}
+      ${gm && gf && gm[1] / gm[0] > 1.5 * (gf[1] / gf[0]) && gm[1] >= 2 ? `<div class="note">이 기간 남성 사직율(${pct(gm[1] / gm[0])})이 여성(${pct(gf[1] / gf[0])})보다 크게 높습니다. 남성 대상 멘토링이나 동료 연결 같은 별도 지원을 검토할 만합니다.</div>` : ''}</section>
+  </div></div>`;
+}
+function survRaw(c, m){
+  const n = byCohort().find(x => x.c === c)?.p || 0;
+  const gone = resF().filter(r => r[0] === c && r[4] <= m).reduce((s, r) => s + r[6], 0);
+  return n ? 1 - gone / n : NaN;
+}
+function survNote(){
+  const xs = COH.filter(inC).filter(c => days(new Date(c + 'T00:00:00'), TODAY) >= 91).map(c => [c, survRaw(c, 3)]).filter(x => isFinite(x[1]));
+  if (xs.length < 2) return '';
+  const w = xs.reduce((a, b) => b[1] < a[1] ? b : a);
+  return `<div class="note">누적 사직율만 보면 최근 회차가 좋아 보일 수 있습니다. <b>입사 3개월 시점</b>으로 맞추면 ${xs.map(([c, v]) => `${cLab(c)} ${pct(v, 0)}`).join(' · ')}가 남아 있어 ${cLab(w[0])}의 조기 이탈이 가장 컸습니다.</div>`;
+}
+function survAt(c, m){
+  if (!c || !inC(c)) return '–';
+  const n = byCohort().find(x => x.c === c).p;
+  const gone = resF().filter(r => r[0] === c && r[4] <= m).reduce((s, r) => s + r[6], 0);
+  return pct(1 - gone / n, 0);
+}
+
+function trendOf(d, rate){
+  const pv = PREV[d]; if (!pv) return { lab:'비교 불가', cls:'' };
+  const [y24, y25] = pv;
+  if (y24 >= .3 && y25 >= .3 && rate >= .3) return { lab:'3년 연속 고위험', cls:'crit' };
+  if ((y25 >= .3 && rate >= .3) || (y24 >= .3 && rate >= .3)) return { lab:'반복 고위험', cls:'crit' };
+  if (rate - y25 >= .2) return { lab:'악화', cls:'warn' };
+  if (y25 - rate >= .2) return { lab:'개선', cls:'good' };
+  return { lab:'유지', cls:'' };
+}
+function p3(){
+  const ds = depts().filter(d => d.p), t = totals(), avg = t.r / t.p;
+  ds.forEach(d => { d.rate = d.r / d.p; d.tier = tier(d.rate, d.p, PREV[d.d]); d.tr = trendOf(d.d, d.rate); });
+  const by = Object.fromEntries(ds.map(d => [d.d, d]));
+  const sel = COH.filter(inC);
+  const cnt = k => ds.filter(d => d.tier === k).length;
+  const worst = [...ds].sort((a, b) => b.rate - a.rate || b.r - a.r)[0];
+  const col = { crit:'var(--crit)', warn:'var(--warn)', good:'var(--good)', none:'var(--line2)' };
+  const groups = GROUPS.filter(([g]) => inG(g)).map(([g, list]) => ({ g, rows: list.map(d => by[d]).filter(Boolean) })).filter(x => x.rows.length);
+  const whole = S.g === 'all' && S.c === 'all';
+  const rateTxt = v => v == null ? '<span class="zero">–</span>' : `<span class="${v >= .3 ? 'hot' : ''}">${pct(v)}</span>`;
+  const delta = (now, before) => {
+    if (before == null || !isFinite(now)) return '';
+    const d = (now - before) * 100;
+    if (Math.abs(d) < .05) return '<span class="dl eq">±0</span>';
+    return `<span class="dl ${d > 0 ? 'up' : 'dn'}" title="${Y1}년 대비">${d > 0 ? '▲' : '▼'}${Math.abs(d).toFixed(1)}</span>`;
+  };
+  const sumBy = (rows, c) => rows.reduce((s, d) => { const [p, r] = d.by[c] || [0, 0]; return [s[0] + p, s[1] + r]; }, [0, 0]);
+  const coh = ([p, r]) => p ? `<td class="num">${r ? `<b class="rd">${r}</b>` : '<span class="zero">0</span>'}<span class="of"> / ${p}</span></td>` : `<td class="num zero">–</td>`;
+  const sig = k => `<span class="sig ${k}"><i aria-hidden="true"></i>${TIER[k][1]}</span>`;
+  const span = sel.length + 7;
+  let body = '';
+  for (const { g, rows } of groups){
+    body += `<tr class="gh"><td colspan="${span}">${g}</td></tr>`;
+    body += rows.map(d => `<tr class="t-${d.tier}" data-tip="${d.d} (${g}) · ${TIER[d.tier][1]}\n${Y0} ${pct(d.rate)} (사직 ${d.r} / 발령 ${d.p}명)${PREV[d.d] ? `\n${Y1} ${pct(PREV[d.d][1])} · ${Y2} ${pct(PREV[d.d][0])}\n3개년 판정: ${d.tr.lab}` : '\n전년도 비교값 없음'}">
+      <td><b>${d.d}</b></td>${sel.map(c => coh(d.by[c] || [0, 0])).join('')}
+      <td class="num">${d.p}명</td><td class="num">${d.r}명</td>
+      <td class="num y6 ys"><b>${pct(d.rate)}</b>${delta(d.rate, PREV[d.d]?.[1])}</td>
+      <td class="num yp">${rateTxt(PREV[d.d]?.[1])}</td><td class="num yp">${rateTxt(PREV[d.d]?.[0])}</td>
+      <td>${sig(d.tier)}</td></tr>`).join('');
+    const p = rows.reduce((s, d) => s + d.p, 0), r = rows.reduce((s, d) => s + d.r, 0);
+    body += `<tr class="sub"><td>${g} 소계</td>${sel.map(c => coh(sumBy(rows, c))).join('')}<td class="num">${p}명</td><td class="num">${r}명</td><td class="num y6 ys"><b>${pct(r / p)}</b></td><td class="num yp zero">–</td><td class="num yp zero">–</td><td></td></tr>`;
+  }
+  const all = groups.flatMap(x => x.rows);
+  const foot = `<tr><td>전체 합계</td>${sel.map(c => coh(sumBy(all, c))).join('')}<td class="num">${t.p}명</td><td class="num">${t.r}명</td>
+    <td class="num y6 ys"><b>${pct(avg)}</b>${whole ? delta(avg, pa(Y1).rate) : ''}</td>
+    <td class="num yp">${whole ? rateTxt(pa(Y1).rate) : '<span class="zero">–</span>'}</td><td class="num yp">${whole ? rateTxt(pa(Y2).rate) : '<span class="zero">–</span>'}</td><td></td></tr>`;
+  const table = `<div class="tw"><table class="gt dt2"><thead>
+    <tr class="band"><th rowspan="2">부서</th><th colspan="${sel.length}">회차별 사직 / 발령</th><th colspan="2">${Y0} 누적</th><th colspan="3" class="ys">사직율</th><th rowspan="2">신호</th></tr>
+    <tr>${sel.map(c => `<th class="num coh">${cLab(c)} <span class="d">${cShort(c)}</span></th>`).join('')}<th class="num">발령</th><th class="num">사직</th><th class="num y6h ys">${Y0}</th><th class="num">${Y1}</th><th class="num">${Y2}</th></tr></thead>
+    <tbody>${body}</tbody><tfoot>${foot}</tfoot></table></div>`;
+
+  // 3개년 비교 차트 (발령현황과 같은 부서 순서)
+  const vmax = Math.max(.5, ...ds.map(d => d.rate), ...ds.flatMap(d => PREV[d.d] || [])) * 1.05;
+  const pos = v => `${v / vmax * 100}%`;
+  const yr = groups.map(({ g, rows }) => `<div class="yg">${g}</div>` + rows.map(d => {
+    const pv = PREV[d.d];
+    return `<div class="yrow" data-tip="${d.d} · ${TIER[d.tier][1]}\n${Y0} ${pct(d.rate)} · ${Y1} ${pv ? pct(pv[1]) : '–'} · ${Y2} ${pv ? pct(pv[0]) : '–'}">
+      <span class="lab"><b>${d.d}</b></span>
+      <div class="ytrack"><div class="vref" style="left:${pos(TARGET)}"></div>
+        <div class="yfill" style="width:${Math.max(d.rate / vmax * 100, .6)}%;--c:${col[d.tier]}"></div>
+        ${pv ? `<i class="mk m24" style="left:${pos(pv[0])}"></i><i class="mk m25" style="left:${pos(pv[1])}"></i>` : ''}</div>
+      <span class="num y26">${pct(d.rate, 0)}</span><span class="num y25">${pv ? pct(pv[1], 0) : '–'}</span><span class="num y24">${pv ? pct(pv[0], 0) : '–'}</span></div>`;
+  }).join('')).join('');
+
+  const gs = groups.map(({ g, rows }) => ({ g, p: rows.reduce((s, d) => s + d.p, 0), r: rows.reduce((s, d) => s + d.r, 0) }));
+  const gsort = [...gs].filter(x => x.p).sort((a, b) => a.r / a.p - b.r / b.p);
+
+  return `<div style="display:grid;gap:20px">
+  <div class="kpis">
+    ${kpi(stBadge('crit'), cnt('crit'), '개 부서', '사직율 40% 이상 또는 2년 연속 30% 초과')}
+    ${kpi(stBadge('warn'), cnt('warn'), '개 부서', '사직율 20~40%')}
+    ${kpi(stBadge('good'), cnt('good'), '개 부서', '사직율 20% 미만')}
+    ${kpi('최고 사직율 부서', worst ? worst.d : '–', '', worst ? `<b class="num">${pct(worst.rate)}</b> (${worst.r}/${worst.p}명)` : '')}
+  </div>
+  <section class="panel w12 hero"><div class="ph"><div><h2>부서별 사직 현황</h2><p>회차 칸은 사직 / 발령 인원 · 사직율 옆 ▲▼는 ${Y1}년 대비 증감(%p) · 전년도 30% 이상은 빨간 글씨</p></div>
+    <div class="legend">${['crit', 'warn', 'good'].map(k => `<span>${sig(k)}</span>`).join('')}</div></div>${table}
+    <div class="note">전년도 사직율은 시트 '부서별 발령/사직'의 ${Y1}·${Y2}년 값을 사용합니다 (${Object.keys(PREV).length}개 부서). 값이 없는 부서는 "–"로 표시됩니다.</div></section>
+  <div class="grid">
+    <section class="panel w8"><div class="ph"><div><h2>부서별 3개년 사직율 비교</h2><p>발령현황과 같은 부서 순서 · 막대 색 = ${Y0} 위험 신호</p></div>
+      <div class="legend"><span><i class="sw" style="--c:var(--s1)"></i>${Y0} (막대)</span><span><i class="mk-l m25"></i>${Y1}</span><span><i class="mk-l m24"></i>${Y2}</span><span><i></i>목표 20%</span></div></div>
+      <div class="yrs"><div class="yrow yhead"><span></span><span></span><span class="num">${Y0}</span><span class="num">${Y1}</span><span class="num">${Y2}</span></div>${yr}</div></section>
+    <section class="panel w4"><div class="ph"><div><h2>부서 구분별 비교</h2><p>${Y0} 사직 / 발령 인원</p></div></div>
+      ${vbars(gs.map(x => ({ label: x.g, sub: `${x.r} / ${x.p}명`, v: x.p ? x.r / x.p : 0, vl: pct(x.r / x.p, 0), c: 'var(--s1)', tip: `${x.g}: 사직 ${x.r} / 발령 ${x.p}명 = ${pct(x.r / x.p)}` })), { max: Math.max(.45, ...gs.map(x => x.p ? x.r / x.p : 0)) * 1.15, h: 180, refs: [{ v: TARGET, label: '목표 20%' }, { v: avg, label: '평균', cls: 'avg' }] })}
+      ${gsort.length > 1 ? `<div class="note"><b>${gsort[0].g}</b>(${pct(gsort[0].r / gsort[0].p)})가 가장 낮고 <b>${gsort.at(-1).g}</b>(${pct(gsort.at(-1).r / gsort.at(-1).p)})가 가장 높습니다.</div>` : ''}
+      <div class="note">신규간호사 전체 사직율: ${Y0} <b>${pct(avg)}</b> · ${Y1} ${pct(pa(Y1).rate)} · ${Y2} ${pct(pa(Y2).rate)}</div></section>
+  </div></div>`;
+}
+
+/* ---------- shell ---------- */
+const CACHE_KEY = 'nurse-dash-v1';
+function navSync(){
+  const pg = PAGES[S.page];
+  document.getElementById('pt').textContent = pg.t;
+  document.getElementById('ps').textContent = pg.s;
+  document.querySelectorAll('.navbtn').forEach(b => b.setAttribute('aria-current', b.dataset.page === S.page ? 'page' : 'false'));
+}
+function showMsg(title, body){
+  document.getElementById('view').innerHTML = `<section class="panel w12 msg"><h2>${title}</h2><p>${body}</p></section>`;
+}
+function stamp(){
+  document.getElementById('today').textContent = fmtD(TODAY);
+  const u = A.lastUpdate || A.generatedAt || '';
+  document.getElementById('upd').textContent = u ? u.slice(5).replace('-', '.') : '–';
+  document.getElementById('src').textContent = A.sheet || '–';
+}
+function liveState(kind, note){
+  const d = document.getElementById('live-dot');
+  d.dataset.state = kind;
+  d.parentElement.title = note || '';
+}
+async function boot(){
+  navSync();
+  let cached = null;
+  try { cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); } catch (e) {}
+  if (cached?.data){ setData(cached.data); render(); liveState('stale', '저장된 데이터를 먼저 표시하고 최신 데이터를 불러오는 중입니다'); }
+  else showMsg('데이터를 불러오는 중입니다', '구글 시트에서 최신 집계를 가져오고 있습니다. 처음 접속할 때는 몇 초 걸릴 수 있습니다.');
+  if (!CFG.API_URL){
+    if (!cached) showMsg('연결 설정이 필요합니다', 'config.js 파일의 API_URL에 Apps Script 웹앱 주소를 입력해 주세요. 자세한 방법은 README.md의 설치 안내를 참고하세요.');
+    liveState('error', 'API_URL 미설정');
+    return;
+  }
+  try {
+    const res = await fetch(CFG.API_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    setData(data); render(); liveState('live', '최신 데이터');
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), data })); } catch (e) {}
+  } catch (err) {
+    if (cached?.data){ liveState('error', '최신 데이터를 불러오지 못해 저장본을 표시 중입니다: ' + err.message); }
+    else { showMsg('데이터를 불러오지 못했습니다', `잠시 후 새로고침해 주세요. 계속 안 되면 Apps Script 배포 상태와 config.js의 주소를 확인하세요. (${esc(err.message)})`); liveState('error', err.message); }
+  }
+}
+
+function filters(){
+  const fc = document.getElementById('f-c'), fgp = document.getElementById('f-g');
+  fc.innerHTML = [['all','전체'], ...COH.map(c => [c, `${cLab(c)} ${cShort(c)}`])].map(([v, l]) => `<button class="chip" data-fc="${v}" id="fc-${v}" aria-pressed="${S.c === v}">${l}</button>`).join('');
+  fgp.innerHTML = [['all','전체'], ...GNAMES.map(g => [g, g])].map(([v, l]) => `<button class="chip" data-fg="${v}" id="fg-${v}" aria-pressed="${S.g === v}">${l}</button>`).join('');
+}
+function calc(){
+  const n = document.getElementById('c-need'); if (!n) return;
+  const need = +n.value || 0, r = Math.min(.9, (+document.getElementById('c-rate').value || 0) / 100);
+  const hire = Math.ceil(need / (1 - r));
+  document.getElementById('c-out').textContent = hire + '명';
+  document.getElementById('c-sub').textContent = `${need}명 ÷ (1 − ${(r * 100).toFixed(1)}%) · 3개월 후 약 ${Math.round(hire * (1 - r))}명 유지`;
+}
+function render(){
+  navSync();
+  if (!A) return;
+  stamp();
+  filters();
+  const v = document.getElementById('view');
+  v.innerHTML = ({ p1, p2, p3 })[S.page]();
+  const sv = document.getElementById('surv'); if (sv) survival(sv);
+  calc();
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('button,th[data-sort],[data-pk]'); if (!b || b.disabled) return;
+  if (b.dataset.page){ S.page = b.dataset.page; history.replaceState(null, '', '#' + S.page); render(); window.scrollTo({ top: 0 }); }
+  else if (b.dataset.fc){ S.c = b.dataset.fc; render(); }
+  else if (b.dataset.fg){ S.g = b.dataset.fg; S.need = S.erate = undefined; render(); }
+  else if (b.dataset.pm){ PS.mode = b.dataset.pm; PS.keys = []; render(); }
+  else if (b.dataset.pk){
+    const k = b.dataset.pk, m = k.split('-')[0];
+    if (m !== PS.mode){ PS.mode = m; PS.keys = [k]; }
+    else {
+      const L = periodList(m).map(x => x.key), cur = curSel().map(x => x.key);
+      PS.keys = cur.includes(k) ? (cur.length > 1 ? cur.filter(x => x !== k) : cur) : [...cur, k].sort((a, b) => L.indexOf(a) - L.indexOf(b));
+    }
+    render();
+  }
+  else if (b.dataset.pall){ PS.keys = periodList(PS.mode).map(x => x.key); render(); }
+  else if (b.dataset.preset){ PS.keys = []; render(); }
+  else if (b.dataset.pstep){
+    const L = periodList(PS.mode), s = curSel(), st = +b.dataset.pstep;
+    const i = st > 0 ? L.findIndex(x => x.key === s.at(-1).key) + 1 : L.findIndex(x => x.key === s[0].key) - 1;
+    if (L[i]){ PS.keys = [L[i].key]; render(); }
+  }
+  else if (b.dataset.compact){ S.compact = !S.compact; render(); }
+  else if (b.dataset.tab){ S.tab = b.dataset.tab; render(); }
+  else if (b.dataset.sort){ const k = b.dataset.sort; S.sort = { k, dir: S.sort.k === k ? -S.sort.dir : (k === 'd' ? 1 : -1) }; render(); }
+});
+document.addEventListener('input', e => {
+  if (e.target.id === 'q'){ S.q = e.target.value; const pos = e.target.selectionStart; render(); const q = document.getElementById('q'); q.focus(); q.setSelectionRange(pos, pos); }
+  if (e.target.id === 'c-need'){ S.need = e.target.value; calc(); }
+  if (e.target.id === 'c-rate'){ S.erate = e.target.value; calc(); }
+});
+const tip = document.getElementById('tip');
+document.addEventListener('pointermove', e => {
+  const t = e.target.closest?.('[data-tip]');
+  if (!t || !t.dataset.tip){ tip.hidden = true; return; }
+  tip.textContent = t.dataset.tip; tip.hidden = false;
+  const r = tip.getBoundingClientRect();
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + r.width > innerWidth - 8) x = e.clientX - r.width - 14;
+  if (y + r.height > innerHeight - 8) y = e.clientY - r.height - 14;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+});
+document.addEventListener('pointerleave', () => tip.hidden = true);
+let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { const sv = document.getElementById('surv'); if (sv) survival(sv); }, 120); });
+const h = location.hash.slice(1); if (PAGES[h]) S.page = h;
+navSync();
+addEventListener('hashchange', () => { const k = location.hash.slice(1); if (PAGES[k] && k !== S.page){ S.page = k; render(); } });
+boot();
+</script>
+</body>
+</html>
