@@ -14,6 +14,10 @@
 /* 기본 리셋 */
 body{margin:0}[hidden]{display:none!important}img{max-width:100%}
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@font-face{font-family:"S-Core Dream";font-weight:400;font-display:swap;src:url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-4Regular.woff") format("woff")}
+@font-face{font-family:"S-Core Dream";font-weight:500;font-display:swap;src:url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-5Medium.woff") format("woff")}
+@font-face{font-family:"S-Core Dream";font-weight:600;font-display:swap;src:url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-6Bold.woff") format("woff")}
+@font-face{font-family:"S-Core Dream";font-weight:700 900;font-display:swap;src:url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-8Heavy.woff") format("woff")}
 /* Layout: 좌측 고정 내비 + 우측 작업면(필터 → KPI → 패널 그리드). 휴대폰에서는 내비가 하단 탭바로 바뀜 */
 :root{
   --bg:#eef3f3; --surface:#fbfdfd; --sunk:#e4ecec; --ink:#0f1c1e; --ink2:#46585b; --muted:#6f8285;
@@ -372,6 +376,58 @@ body{background:var(--bg)}
   .main{padding-bottom:0}
 }
 
+/* 글꼴: 에스코어드림 */
+:root{--f-ui:"S-Core Dream","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;--f-num:"S-Core Dream","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif}
+body,button,input,select{font-family:var(--f-ui)}
+.num,td.num,th.num{letter-spacing:0}
+/* 상단 바: 보수교육 대시보드 형식 */
+.topbar{padding:12px clamp(16px,2vw,28px)}
+.logo-sq{width:34px;height:34px;border-radius:9px;font-size:22px;box-shadow:0 4px 10px rgba(37,99,235,.3)}
+.tb-title{font-size:19px;font-weight:700;letter-spacing:-.02em}
+.org{text-align:right}
+.org b{font-size:14px;font-weight:700;color:var(--navy)}
+.org small{font-size:12px}
+.tb-r .pill{border:0;background:none;padding:4px 6px;font-size:12.5px}
+.tb-r .pill b{font-weight:500}
+.pill .dot{width:8px;height:8px}
+/* KPI: 남색 강조 카드 + 색 점 라벨 */
+.kpi .lab{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:6px}
+.kpi .val{font-weight:700;font-size:40px;letter-spacing:-.02em}
+.kpi:first-child .val{font-size:44px}
+.kpi:nth-child(n+2) .lab::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--s1);flex:none}
+.kpi:nth-child(2) .val,.kpi:nth-child(3) .val{color:var(--s1)}
+.kpi:nth-child(4) .lab::before{background:var(--s2)}
+.kpi:nth-child(4) .val{color:#b45309}
+:root:not([data-theme="light"]) .kpi:nth-child(4) .val{color:var(--s2)}
+@media (prefers-color-scheme: light){.kpi:nth-child(4) .val{color:#b45309}}
+.ph h2{font-size:17px;font-weight:700}
+/* 전년도 비교 */
+.yoy{grid-column:auto}
+.ybars{display:grid;gap:10px}
+.yb{display:grid;grid-template-columns:3.4rem minmax(0,1fr) 9rem;gap:12px;align-items:center;font-size:13px}
+.yb b{font-weight:700}
+.ytr{display:flex;height:16px;border-radius:999px;overflow:hidden;background:var(--sunk)}
+.ytr i{display:block;height:100%}
+.yb span{text-align:right;color:var(--ink2);font-size:12.5px}
+.ycards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.yc{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:2px}
+.yc small{font-size:12px;color:var(--muted)}
+.yc b{font-size:24px;font-weight:700;color:var(--s1)}
+.yc span{font-size:12.5px;color:var(--ink2)}
+.yc em{font-style:normal;font-weight:700;color:#b45309}
+.yc.cur{background:var(--accent-soft);border-color:transparent}
+.yc .up{color:var(--crit-ink);font-weight:600}.yc .dn{color:var(--good-ink);font-weight:600}
+/* 사직분석 하위 구역 */
+.subsec{margin-top:10px;padding-top:16px;border-top:1px dashed var(--line2)}
+.subsec h3{margin:0;font-size:15px;font-weight:700}
+.subsec p{margin:3px 0 0;font-size:12px;color:var(--muted)}
+.trk{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:600}
+.trk.med{background:color-mix(in oklab,var(--s1) 14%,transparent);color:var(--s1)}
+.trk.sur{background:color-mix(in oklab,var(--s2) 18%,transparent);color:#b45309}
+.mtbl{max-height:340px;overflow:auto}
+.mt tr.top td{background:color-mix(in oklab,var(--s2) 9%,transparent)}
+.rdx{color:var(--crit-ink)}
+.vb .xl span{white-space:pre-line}
 .calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
 .calc label{display:grid;gap:4px;font-size:12px;color:var(--ink2)}
 .calc input{border:1px solid var(--line2);background:var(--surface);border-radius:8px;padding:8px 10px;font-family:var(--f-num);font-size:16px;width:100%}
@@ -595,6 +651,22 @@ const PAGES = {
 const cmp = items => `<span class="cmp">${items.map(([a, b]) => `<span>${a} <b class="num">${b}</b></span>`).join('')}${S.g !== 'all' || S.c !== 'all' ? '<span class="zero">전년도는 전체 기준</span>' : ''}</span>`;
 function kpi(lab, val, unit, sub){ return `<div class="kpi"><span class="lab">${lab}</span><span class="val">${val}${unit ? `<small>${unit}</small>` : ''}</span><span class="sub">${sub||''}</span></div>`; }
 
+// 전년도 비교: 연도별 발령인원을 재직(파랑)·사직(주황)으로 나눈 가로 막대 (전체 기준)
+function yoy(){
+  const cy = +COH.at(-1).slice(0, 4);
+  let p = 0, r = 0; for (const [, [pp, rr]] of Object.entries(A.dept)){ p += pp; r += rr; }
+  const rows = Object.keys(PREV_ALL).map(Number).filter(y => y < cy).sort().map(y => { const x = PREV_ALL[y]; const rr = Math.round(x.placed * x.rate); return { y, p: x.placed, r: rr, rate: x.rate, est: true }; });
+  rows.push({ y: cy, p, r, rate: p ? r / p : 0, cur: true });
+  const max = Math.max(...rows.map(x => x.p));
+  const prev = rows.length > 1 ? rows[rows.length - 2] : null;
+  return `<section class="panel w12 yoy"><div class="ph"><div><h2>전년도 비교</h2><p>신규간호사 전체 기준 · 전년도 사직인원은 사직율로 환산한 값</p></div>
+    <div class="legend"><span><i class="sw" style="--c:var(--s1)"></i>재직</span><span><i class="sw" style="--c:var(--s2)"></i>사직</span></div></div>
+    <div class="ybars">${rows.map(x => `<div class="yb" data-tip="${x.y}년\n발령 ${x.p}명 · 사직 ${x.r}명${x.est ? ' (환산)' : ''} · 사직율 ${pct(x.rate)}">
+      <b>${x.y}</b><div class="ytr"><i style="width:${(x.p - x.r) / max * 100}%;background:var(--s1)"></i><i style="width:${x.r / max * 100}%;background:var(--s2)"></i></div>
+      <span>총 ${x.p}명${x.cur ? ' (진행중)' : ''}</span></div>`).join('')}</div>
+    <div class="ycards">${rows.map(x => `<div class="yc${x.cur ? ' cur' : ''}"><small>${x.y}년 발령 · 사직율</small><b>${x.p}명</b><span>사직율 <em>${pct(x.rate)}</em>${x.cur && prev ? ` · <span class="${x.rate > prev.rate ? 'up' : 'dn'}">${x.rate > prev.rate ? '▲' : '▼'}${Math.abs((x.rate - prev.rate) * 100).toFixed(1)}%p vs ${prev.y}</span>` : ''}</span></div>`).join('')}</div>
+  </section>`;
+}
 function p1(){
   const t = totals(), bc = byCohort(), ds = depts();
   const sel = COH.filter(inC), latest = sel.at(-1) || COH.at(-1);
@@ -654,6 +726,7 @@ function p1(){
     ${kpi('현재 재직인원', t.p - t.r, '명', `사직 ${t.r}명 제외`)}
     ${kpi('사직율', pct(t.r / t.p), '', cmp([[Y1 + '년', pct(pa(Y1).rate)], [Y2 + '년', pct(pa(Y2).rate)]]))}
   </div>
+  ${yoy()}
   <div class="grid">
     <section class="panel w12"><div class="ph"><div><h2>발령 회차 정보</h2><p>막대: 재직(파랑) · 사직(빨강) 비율, D+는 기준일까지 경과일</p></div></div><div class="tl">${tl}</div></section>
     <section class="panel w7"><div class="ph"><div><h2>발령일자별 총 발령인원</h2><p>단위: 명</p></div></div>
@@ -791,6 +864,33 @@ function p2(){
   const unknown = (reasons['미기재'] || 0) + (reasons['기타'] || 0);
   const gm = fg['남'], gf = fg['여'];
   const none = '<p class="note">이 기간에는 사직이 없습니다.</p>';
+  // 내과계·외과계 (계열 집계는 API의 track 항목, 기간 사직율 방식 동일)
+  const TR = [['병동 내과계', '병동계', '내과계'], ['병동 외과계', '병동계', '외과계'], ['중환자 내과계', '중환자계', '내과계'], ['중환자 외과계', '중환자계', '외과계']];
+  const ft = facetP(A.track || {}, pr);
+  const trs = TR.map(([k, a, b]) => ({ k, a, b, n: (ft[k] || [0, 0])[0], r: (ft[k] || [0, 0])[1] })).filter(x => x.n);
+  const sumT = b => trs.filter(x => x.b === b).reduce((s, x) => [s[0] + x.n, s[1] + x.r], [0, 0]);
+  const [mN, mR] = sumT('내과계'), [sN, sR] = sumT('외과계');
+  const trCol = b => b === '내과계' ? 'var(--s1)' : 'var(--s2)';
+  const trackBlock = trs.length ? `<div class="subsec"><h3>내과계 · 외과계 사직율</h3><p>병동계 내과 14A·14B·13A·13B·12A·12B·11B / 외과 11A·10A·10B·9A·9B·8A·8B·7A·7B · 중환자계 내과 MICU / 외과 SICU·EICU</p></div>
+    <div class="split">
+      <div>${vbars(trs.map(x => ({ label: x.k.replace(' ', '\n'), sub: `${x.r} / ${x.n}명`, v: x.r / x.n, vl: pct(x.r / x.n), c: trCol(x.b), tip: `${x.k}\n${pr.label}: 사직 ${x.r} / 재직 ${x.n}명 = ${pct(x.r / x.n)}` })), { max: Math.max(showT ? TARGET * 1.4 : .05, ...trs.map(x => x.r / x.n)) * 1.15, refs: refs(rate), h: 190 })}
+        <div class="legend"><span><i class="sw" style="--c:var(--s1)"></i>내과계</span><span><i class="sw" style="--c:var(--s2)"></i>외과계</span></div></div>
+      <div class="tw"><table class="mt"><thead><tr><th>구분</th><th>계열</th><th class="num">재직</th><th class="num">사직</th><th class="num">사직율</th><th class="num">평균 대비</th></tr></thead><tbody>
+        ${trs.map(x => `<tr><td>${x.a}</td><td><span class="trk ${x.b === '내과계' ? 'med' : 'sur'}">${x.b}</span></td><td class="num">${x.n}명</td><td class="num">${x.r}명</td><td class="num"><b>${pct(x.r / x.n)}</b></td><td class="num">${dpp(x.r / x.n, rate)}</td></tr>`).join('')}
+        </tbody><tfoot>
+        ${mN ? `<tr><td colspan="2">내과계 전체</td><td class="num">${mN}명</td><td class="num">${mR}명</td><td class="num">${pct(mR / mN)}</td><td class="num">${dpp(mR / mN, rate)}</td></tr>` : ''}
+        ${sN ? `<tr><td colspan="2">외과계 전체</td><td class="num">${sN}명</td><td class="num">${sR}명</td><td class="num">${pct(sR / sN)}</td><td class="num">${dpp(sR / sN, rate)}</td></tr>` : ''}
+        </tfoot></table></div></div>
+    ${mN && sN ? `<div class="note">${esc(pr.label)} 기준 외과계 사직율 <b>${pct(sR / sN)}</b>, 내과계 <b>${pct(mR / mN)}</b>로 ${sR / sN > mR / mN ? '외과계' : '내과계'}가 ${Math.abs((sR / sN - mR / mN) * 100).toFixed(1)}%p 높습니다. NICU·MFICU·수술회복·응급·6A는 계열 구분에서 제외했습니다.</div>` : ''}` : '';
+  // 남성 신규간호사 부서별 (누적, API의 maleDept 항목)
+  const md = {};
+  for (const [k, [p, r]] of Object.entries(A.maleDept || {})){ const d = k.split('|')[1]; if (!inG(grpOf(d))) continue; md[d] ??= [0, 0]; md[d][0] += p; md[d][1] += r; }
+  const mrows = Object.entries(md).sort((a, b) => deptOrder(a[0], b[0]));
+  const mT = mrows.reduce((s, [, v]) => [s[0] + v[0], s[1] + v[1]], [0, 0]);
+  const maleBlock = mrows.length ? `<div class="subsec"><h3>남성 신규간호사 부서별 사직</h3><p>누적 기준 (왼쪽 기간 조건은 적용되지 않음) · 부서군 조건만 적용</p></div>
+    <div class="tw mtbl"><table class="mt"><thead><tr><th>부서</th><th>부서군</th><th class="num">남성 발령</th><th class="num">사직</th><th class="num">사직율</th></tr></thead><tbody>
+      ${mrows.map(([d, [p, r]]) => `<tr${r ? ' class="top"' : ''}><td><b>${d}</b></td><td><span class="tag">${grpOf(d)}</span></td><td class="num">${p}명</td><td class="num">${r ? `<b class="rdx">${r}명</b>` : '0명'}</td><td class="num">${pct(r / p, 0)}</td></tr>`).join('')}
+    </tbody><tfoot><tr><td>합계</td><td>${mrows.length}개 부서</td><td class="num">${mT[0]}명</td><td class="num">${mT[1]}명</td><td class="num">${pct(mT[1] / Math.max(1, mT[0]))}</td></tr></tfoot></table></div>` : '';
 
   const delta = prate == null || !isFinite(rate) ? '' : (() => { const d = (rate - prate) * 100; return `<span style="color:${d > 0 ? 'var(--crit-ink)' : 'var(--good-ink)'}">직전 ${prev.short} 대비 ${d > 0 ? '▲' : d < 0 ? '▼' : ''}${Math.abs(d).toFixed(1)}%p</span>`; })();
 
@@ -813,7 +913,8 @@ function p2(){
           ${gsP.map(x => `<tr${x === gTop && gsP.length > 1 ? ' class="top"' : ''}><td><b>${x.g}</b></td><td class="num">${x.n}명</td><td class="num">${x.r}명</td><td class="num"><b>${pct(x.r / x.n)}</b></td><td class="num">${x.e}명${x.r ? ` <span class="zero">(${pct(x.e / x.r, 0)})</span>` : ''}</td><td class="num">${dpp(x.r / x.n, rate)}</td></tr>`).join('')}
         </tbody><tfoot><tr><td>합계</td><td class="num">${t.n}명</td><td class="num">${t.r}명</td><td class="num">${pct(rate)}</td><td class="num">${early}명</td><td></td></tr></tfoot></table></div>
       </div>
-      ${gsP.length > 1 && gTop.r ? `<div class="note">${esc(pr.label)} 기준 <b>${gTop.g}</b>의 사직율(${pct(gTop.r / gTop.n)})이 가장 높습니다. 주황 막대로 표시했습니다.</div>` : ''}` : '<p class="note">이 기간에 재직한 인원이 없습니다.</p>'}</section>
+      ${gsP.length > 1 && gTop.r ? `<div class="note">${esc(pr.label)} 기준 <b>${gTop.g}</b>의 사직율(${pct(gTop.r / gTop.n)})이 가장 높습니다. 주황 막대로 표시했습니다.</div>` : ''}` : '<p class="note">이 기간에 재직한 인원이 없습니다.</p>'}
+      ${trackBlock}</section>
     <section class="panel w7"><div class="ph"><div><h2>발령일자별 사직율</h2><p>막대 아래: 기간 중 사직 / 재직 인원</p></div>${legend(rate)}</div>
       ${bc.length ? vbars(bc.map(b => ({ label: cLab(b.c), sub: `${b.r} / ${b.n}명`, v: b.r / b.n, vl: pct(b.r / b.n), c: 'var(--s1)', tip: `${cLab(b.c)} ${b.c}\n${pr.label}: 사직 ${b.r} / 재직 ${b.n}명 = ${pct(b.r / b.n)}` })), { max: rmax, refs: refs(rate), h: 170 }) : '<p class="note">이 기간에 재직한 발령 회차가 없습니다.</p>'}
       ${bc.length ? `<div class="tw"><table class="mt"><thead><tr><th>회차</th><th class="num">발령일</th><th class="num">재직</th><th class="num">사직</th><th class="num">사직율</th><th class="num">${showT ? '목표 20% 대비' : '평균 대비'}</th></tr></thead><tbody>
@@ -840,7 +941,8 @@ function p2(){
       ${t.r && unknown / t.r > .3 ? `<div class="note">'기타'와 '미기재'가 사직자의 ${pct(unknown / t.r, 0)}입니다. 퇴직 면담 때 <b>업무적응 · 근무환경 · 인간관계 · 건강 · 이직 · 학업 · 개인/가족</b>처럼 사유 코드를 표준화해야 원인 분석이 가능합니다.</div>` : ''}</section>
     <section class="panel"><div class="ph"><div><h2>성별 사직율</h2><p>기간 중 재직 인원 기준</p></div>${legend()}</div>
       ${hbars(rateItems(['여', '남'], fg), { max: fmax(fg), refs: showT ? [{ v: TARGET }] : [] })}
-      ${gm && gf && gm[1] / gm[0] > 1.5 * (gf[1] / gf[0]) && gm[1] >= 2 ? `<div class="note">이 기간 남성 사직율(${pct(gm[1] / gm[0])})이 여성(${pct(gf[1] / gf[0])})보다 크게 높습니다. 남성 대상 멘토링이나 동료 연결 같은 별도 지원을 검토할 만합니다.</div>` : ''}</section>
+      ${gm && gf && gm[1] / gm[0] > 1.5 * (gf[1] / gf[0]) && gm[1] >= 2 ? `<div class="note">이 기간 남성 사직율(${pct(gm[1] / gm[0])})이 여성(${pct(gf[1] / gf[0])})보다 크게 높습니다. 남성 대상 멘토링이나 동료 연결 같은 별도 지원을 검토할 만합니다.</div>` : ''}
+      ${maleBlock}</section>
   </div></div>`;
 }
 function survRaw(c, m){

@@ -23,6 +23,12 @@ const DASH = {
     ['수술회복', ['수술실', '회복실']],
     ['응급', ['응급실']],
   ],
+  // 내과계·외과계 구분 (여기에 없는 부서는 '미분류')
+  TRACKS: {
+    '14A': '병동 내과계', '14B': '병동 내과계', '13A': '병동 내과계', '13B': '병동 내과계', '12A': '병동 내과계', '12B': '병동 내과계', '11B': '병동 내과계',
+    '11A': '병동 외과계', '10A': '병동 외과계', '10B': '병동 외과계', '9A': '병동 외과계', '9B': '병동 외과계', '8A': '병동 외과계', '8B': '병동 외과계', '7A': '병동 외과계', '7B': '병동 외과계',
+    'MICU': '중환자 내과계', 'SICU': '중환자 외과계', 'EICU': '중환자 외과계',
+  },
 };
 
 function doGet() {
@@ -73,7 +79,7 @@ function buildDashboardData_() {
   groups.forEach(g => g[1].forEach(d => { groupOf[d] = g[0]; }));
   const extra = [];
 
-  const dept = {}, gender = {}, ai = {}, rank = {}, res = {};
+  const dept = {}, gender = {}, ai = {}, rank = {}, track = {}, maleDept = {}, res = {};
   let lastUpdate = null;
   const facet = (obj, key, days) => {
     const v = obj[key] || (obj[key] = [0, []]);
@@ -100,6 +106,11 @@ function buildDashboardData_() {
     facet(gender, base + ({ '남자': '남', '남': '남', '여자': '여', '여': '여' }[String(r[C.gender] || '').trim()] || '미기재'), days);
     facet(ai, base + (String(C.ai >= 0 ? r[C.ai] : '').trim() || '미기재'), days);
     facet(rank, base + rankBand_(C.rank >= 0 ? r[C.rank] : ''), days);
+    facet(track, base + (DASH.TRACKS[d] || '미분류'), days);
+    if ({ '남자': 1, '남': 1 }[String(r[C.gender] || '').trim()]) {
+      const mv = maleDept[dk] || (maleDept[dk] = [0, 0]);
+      mv[0]++; if (end) mv[1]++;
+    }
 
     if (end) {
       const m = monthIndex_(start, end);
@@ -114,7 +125,7 @@ function buildDashboardData_() {
     }
   }
   if (extra.length) groups.push(['기타', extra]);
-  [gender, ai, rank].forEach(o => Object.keys(o).forEach(k => o[k][1].sort((a, b) => a - b)));
+  [gender, ai, rank, track].forEach(o => Object.keys(o).forEach(k => o[k][1].sort((a, b) => a - b)));
 
   const fmt = dt => Utilities.formatDate(dt, DASH.TZ, 'yyyy-MM-dd HH:mm');
   return {
@@ -127,6 +138,8 @@ function buildDashboardData_() {
     gender: gender,
     ai: ai,
     rank: rank,
+    track: track,          // 발령일|부서군|계열 → [발령인원, 사직자별 근속일]
+    maleDept: maleDept,    // 발령일|부서 → [남성 발령인원, 남성 사직인원] (누적)
     // [발령일, 부서구분, 사직발생기간, 사직사유, 사직 경과월(1=1개월 이내), 근속일, 인원]
     res: Object.keys(res).map(k => {
       const p = k.split('\u0001');
