@@ -271,6 +271,107 @@ b.rd{color:var(--crit-ink)}
 .gtab td .sh,.gtab tfoot .sh{display:block;font-size:11px;font-weight:400;color:var(--muted);line-height:1.2}
 .gtab td.heat.hi .sh{color:rgba(255,255,255,.8)}
 .ct .rdx{color:var(--crit-ink);font-weight:600}
+/* ===== 좌측 메뉴·조회조건 레이아웃 (남색·파랑 톤) ===== */
+:root{
+  --bg:#f3f5f9; --surface:#ffffff; --sunk:#f4f6fa; --ink:#111827; --ink2:#4b5563; --muted:#6b7280;
+  --line:#e6eaf1; --line2:#d5dbe5; --accent:#2563eb; --accent-ink:#ffffff; --accent-soft:#e8efff;
+  --s1:#2563eb; --s2:#f59e0b; --s3:#10b981; --seq:#2563eb; --warm:#f59e0b;
+  --navy:#1f3a68; --navy2:#2a4b85;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b1220; --surface:#121a2b; --sunk:#0f1626; --ink:#e8edf6; --ink2:#b6c0d1; --muted:#8a96aa;
+    --line:#1f2a3f; --line2:#2b3954; --accent:#60a5fa; --accent-ink:#0b1220; --accent-soft:#16264a;
+    --s1:#60a5fa; --s2:#fbbf24; --s3:#34d399; --seq:#60a5fa; --warm:#fbbf24; --navy:#14254a; --navy2:#1d3566;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b1220; --surface:#121a2b; --sunk:#0f1626; --ink:#e8edf6; --ink2:#b6c0d1; --muted:#8a96aa;
+  --line:#1f2a3f; --line2:#2b3954; --accent:#60a5fa; --accent-ink:#0b1220; --accent-soft:#16264a;
+  --s1:#60a5fa; --s2:#fbbf24; --s3:#34d399; --seq:#60a5fa; --warm:#fbbf24; --navy:#14254a; --navy2:#1d3566;
+}
+body{background:var(--bg)}
+
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:25;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px clamp(16px,2vw,28px);background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 1px 3px rgba(17,24,39,.05)}
+.tb-l{display:flex;align-items:center;gap:12px;min-width:0}
+.logo-sq{display:grid;place-items:center;flex:none;width:30px;height:30px;border-radius:8px;background:var(--accent);color:#fff;font-weight:700;font-size:20px;line-height:1}
+.tb-title{font-size:17px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-r{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.org{display:grid;text-align:right;line-height:1.25;margin-right:6px}
+.org b{font-size:13px;color:var(--navy)}
+.org small{font-size:11px;color:var(--muted)}
+.refresh{width:32px;height:32px;border-radius:8px;border:1px solid var(--line2);background:var(--surface);color:var(--ink2);cursor:pointer;font-size:16px}
+.refresh:hover{border-color:var(--accent);color:var(--accent)}
+
+.app{display:grid;grid-template-columns:264px minmax(0,1fr);gap:24px;align-items:start;padding:24px clamp(16px,2vw,28px) 48px;max-width:none;margin:0}
+.side{position:sticky;top:76px;display:grid;gap:14px;align-content:start;max-height:calc(100vh - 92px);overflow:auto;padding-bottom:4px}
+.navcard{background:linear-gradient(160deg,var(--navy2),var(--navy));border-radius:16px;padding:10px;box-shadow:0 6px 18px rgba(31,58,104,.22)}
+.navcard .navlist{display:grid;gap:4px}
+.navcard .navbtn{display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;border:0;border-radius:10px;background:none;color:rgba(255,255,255,.82);font-weight:600;font-size:14.5px;text-align:left;cursor:pointer}
+.navcard .navbtn .ic{width:18px;text-align:center;opacity:.85}
+.navcard .navbtn:hover{background:rgba(255,255,255,.08);color:#fff}
+.navcard .navbtn[aria-current="page"]{background:rgba(255,255,255,.16);color:#fff}
+
+.fcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 16px 14px}
+.fcard summary{list-style:none;cursor:pointer;font-size:13px;font-weight:700;color:var(--ink);display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.fcard summary::-webkit-details-marker{display:none}
+.fcard summary span{font-weight:500;font-size:11px;color:var(--accent);text-align:right}
+.fcard[open] summary{margin-bottom:10px}
+#f-side{display:grid;gap:14px}
+.fs{display:grid;gap:7px}
+.fl{font-size:12.5px;font-weight:600;color:var(--ink2)}
+.cg{display:flex;flex-wrap:wrap;gap:6px}
+.cg.mg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.fcard .chip{height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line2);background:var(--surface);color:var(--ink);font-size:13px;font-weight:500}
+.fcard .cg.mg .chip{padding:0}
+.fcard .chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:700}
+.fcard .chip:disabled{opacity:.35;cursor:default}
+.fcard select{height:38px;border:1px solid var(--line2);border-radius:10px;padding:0 10px;background:var(--surface);color:var(--ink);font-size:13.5px}
+.fcard select:disabled{color:var(--muted);background:var(--sunk)}
+.fhint{margin:0;font-size:11.5px;color:var(--muted);line-height:1.5}
+.freset{height:34px;border:1px dashed var(--line2);border-radius:10px;background:none;color:var(--ink2);font-size:12.5px;cursor:pointer}
+.freset:hover{border-color:var(--accent);color:var(--accent)}
+.side .navfoot{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:16px}
+
+.main{padding:0;gap:20px;min-width:0}
+.head{display:flex;align-items:flex-end}
+.head h1{font-size:22px}
+.head p{font-size:13px}
+
+/* KPI: 첫 카드는 남색 강조 카드 */
+.kpis{gap:14px}
+.kpi{border-radius:16px;padding:20px 22px;border:1px solid var(--line);box-shadow:0 1px 2px rgba(17,24,39,.04)}
+.kpi .val{font-size:34px}
+.kpi:first-child{position:relative;overflow:hidden;background:linear-gradient(140deg,var(--navy2),var(--navy));border-color:transparent;color:#fff}
+.kpi:first-child::before,.kpi:first-child::after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.07)}
+.kpi:first-child::before{width:150px;height:150px;right:-30px;top:-50px}
+.kpi:first-child::after{width:110px;height:110px;right:70px;bottom:-60px}
+.kpi:first-child .lab,.kpi:first-child .sub,.kpi:first-child .val small{color:rgba(255,255,255,.82)}
+.kpi:first-child .cmp{border-top-color:rgba(255,255,255,.25);color:rgba(255,255,255,.82)}
+.kpi:first-child .cmp b,.kpi:first-child .sub b{color:#fff}
+.kpi:first-child .st{color:#fff}
+
+/* 섹션 카드 + 제목 앞 파란 막대 */
+.panel{border-radius:16px;box-shadow:0 1px 2px rgba(17,24,39,.04)}
+.ph h2{display:flex;align-items:center;gap:8px}
+.ph h2::before{content:"";width:4px;height:16px;border-radius:2px;background:var(--accent);flex:none}
+.pbar{border-radius:16px}
+.dnote{border-left:4px solid var(--accent)}
+.tli .no{color:var(--accent)}
+
+@media (max-width:1100px){.app{grid-template-columns:230px minmax(0,1fr)}}
+@media (max-width:820px){
+  .topbar{flex-wrap:wrap}
+  .org,.tb-r .pill:nth-of-type(2){display:none}
+  .app{grid-template-columns:1fr;padding-top:14px;gap:14px}
+  .side{position:static;max-height:none;overflow:visible}
+  .navcard{padding:6px}
+  .navcard .navlist{grid-template-columns:repeat(3,1fr);width:auto}
+  .navcard .navbtn{flex-direction:column;gap:2px;padding:8px 4px;font-size:12.5px;text-align:center;justify-content:center}
+  .side .navfoot{display:none}
+  .main{padding-bottom:0}
+}
+
 .calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
 .calc label{display:grid;gap:4px;font-size:12px;color:var(--ink2)}
 .calc input{border:1px solid var(--line2);background:var(--surface);border-radius:8px;padding:8px 10px;font-family:var(--f-num);font-size:16px;width:100%}
@@ -305,35 +406,39 @@ svg text{font-family:var(--f-ui)}
 </head>
 <body>
 
+<header class="topbar">
+  <div class="tb-l"><span class="logo-sq" aria-hidden="true">+</span><b class="tb-title">신규간호사 발령 유지관리 대시보드</b></div>
+  <div class="tb-r">
+    <div class="org"><b>인제대학교 해운대백병원 간호국</b><small>간호교육팀</small></div>
+    <span class="pill"><span class="dot" id="live-dot"></span>기준일 <b class="num" id="today">–</b></span>
+    <span class="pill">시트 갱신 <b class="num" id="upd">–</b></span>
+    <button class="refresh" id="refresh" data-refresh="1" aria-label="데이터 새로고침" title="데이터 새로고침">↻</button>
+  </div>
+</header>
 <div class="app">
-  <nav class="nav" aria-label="페이지">
-    <div class="brand"><small>해운대백병원 간호국</small><b>신규간호사<br>발령 유지관리 시스템</b></div>
-    <div class="navlist" role="list">
-      <button class="navbtn" data-page="p1" id="nav-p1"><span class="k">01</span>발령현황</button>
-      <button class="navbtn" data-page="p2" id="nav-p2"><span class="k">02</span>사직분석</button>
-      <button class="navbtn" data-page="p3" id="nav-p3"><span class="k">03</span>부서별 사직</button>
-    </div>
+  <aside class="side">
+    <nav class="navcard" aria-label="페이지">
+      <div class="navlist" role="list">
+        <button class="navbtn" data-page="p1" id="nav-p1"><span class="ic" aria-hidden="true">▤</span>발령현황</button>
+        <button class="navbtn" data-page="p2" id="nav-p2"><span class="ic" aria-hidden="true">↘</span>사직분석</button>
+        <button class="navbtn" data-page="p3" id="nav-p3"><span class="ic" aria-hidden="true">▦</span>부서별 사직</button>
+      </div>
+    </nav>
+    <details class="fcard" id="fcard" open>
+      <summary>조회 조건 <span id="f-sum"></span></summary>
+      <div id="f-side"></div>
+    </details>
     <div class="navfoot">
       <span>데이터 원본 <b id="src">–</b></span>
       <span>사직정보 자동 갱신 <b>매일 17:00</b></span>
       <span>관리 목표 사직율 <b>20% 이하</b></span>
     </div>
-  </nav>
+  </aside>
 
   <main class="main">
     <header class="head">
       <div><h1 id="pt">발령현황</h1><p id="ps"></p></div>
-      <div class="stamp">
-        <span class="pill"><span class="dot" id="live-dot"></span>기준일 <b class="num" id="today">–</b></span>
-        <span class="pill">시트 갱신 <b class="num" id="upd">–</b></span>
-      </div>
     </header>
-
-    <section class="filters" aria-label="조회 조건">
-      <div class="fgroup"><span class="flabel">발령회차</span><div class="seg" id="f-c"></div></div>
-      <div class="fgroup"><span class="flabel">부서군</span><div class="seg" id="f-g"></div></div>
-    </section>
-
     <div id="view"></div>
   </main>
 </div>
@@ -365,10 +470,14 @@ function setData(data){
 const SER = i => ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)', 'var(--s5)', 'var(--s6)'][i % 6];
 const cLab = c => (COH.indexOf(c) + 1) + '차';
 const cShort = c => c.slice(5).replace('-', '.');
-const S = { c:'all', g:'all', page:'p1', tab:'hr', sort:{k:'tot',dir:-1}, q:'' };
+const S = { c:'all', g:'all', d:'all', page:'p1', tab:'hr', sort:{k:'tot',dir:-1}, q:'' };
+// 사이드바 기간 선택: 연도 / 분기(여러 개) / 월(여러 개) → 아래 syncPS()가 PS(기간 상태)로 옮긴다
+const SB = { y:'all', q:[], m:[] };
 
 const pct = (x, d=1) => isFinite(x) ? (x*100).toFixed(d) + '%' : '–';
-const inC = c => S.c === 'all' || S.c === c;
+// 발령현황·부서별 사직은 발령일이 선택 기간에 들어가는 회차만, 사직분석은 모든 회차(기간은 사직일에 적용)
+const inC = c => S.page === 'p2' || PS.mode === 'now' || inPer(new Date(c + 'T00:00:00'), curPeriod());
+const inD = d => S.d === 'all' || S.d === d;
 const inG = g => S.g === 'all' || S.g === g;
 const days = (a, b) => Math.round((b - a) / 864e5);
 const addDays = (s, n) => { const d = new Date(s + 'T00:00:00'); d.setDate(d.getDate() + n); return d; };
@@ -383,7 +492,7 @@ function depts(){
   const m = {};
   for (const [k, [p, r]] of Object.entries(A.dept)){
     const [c, d] = k.split('|'); const g = grpOf(d);
-    if (!inG(g)) continue;
+    if (!inG(g) || !inD(d)) continue;
     m[d] ??= { d, g, by:{}, p:0, r:0 };
     m[d].by[c] = [p, r];
     if (inC(c)){ m[d].p += p; m[d].r += r; }
@@ -407,7 +516,7 @@ function totals(){
 function byCohort(){
   return COH.map(c => {
     let p = 0, r = 0;
-    for (const [k, [pp, rr]] of Object.entries(A.dept)){ const [cc, d] = k.split('|'); if (cc === c && inG(grpOf(d))){ p += pp; r += rr; } }
+    for (const [k, [pp, rr]] of Object.entries(A.dept)){ const [cc, d] = k.split('|'); if (cc === c && inG(grpOf(d)) && inD(d)){ p += pp; r += rr; } }
     return { c, p, r };
   });
 }
@@ -488,7 +597,7 @@ function kpi(lab, val, unit, sub){ return `<div class="kpi"><span class="lab">${
 
 function p1(){
   const t = totals(), bc = byCohort(), ds = depts();
-  const sel = COH.filter(inC), latest = COH.at(-1);
+  const sel = COH.filter(inC), latest = sel.at(-1) || COH.at(-1);
   const groups = GNAMES.filter(inG).map(g => ({ g, p: ds.filter(d => d.g === g).reduce((s, d) => s + d.p, 0) }));
   // 회차별 발령인원 표
   const bcs = bc.filter(b => inC(b.c));
@@ -497,7 +606,7 @@ function p1(){
     </tbody><tfoot><tr><td>합계</td><td class="num">${bcs.length}개 회차</td><td class="num">${t.p}명</td><td class="num">100%</td><td class="num">${t.p - t.r}명</td><td class="num">${t.r}명</td><td></td></tr></tfoot></table></div>`;
   // 회차 × 부서군 배치 표
   const gcols = GNAMES.filter(inG);
-  const gp = (c, g) => Object.entries(A.dept).reduce((s, [k, [p]]) => { const [cc, d] = k.split('|'); return cc === c && grpOf(d) === g ? s + p : s; }, 0);
+  const gp = (c, g) => Object.entries(A.dept).reduce((s, [k, [p]]) => { const [cc, d] = k.split('|'); return cc === c && grpOf(d) === g && inD(d) ? s + p : s; }, 0);
   const gm = bcs.map(b => ({ c: b.c, v: gcols.map(g => gp(b.c, g)) }));
   const gmax = Math.max(1, ...gm.flatMap(r => r.v));
   const gtot = gcols.map((g, i) => gm.reduce((s, r) => s + r.v[i], 0));
@@ -523,7 +632,7 @@ function p1(){
   let body = '';
   for (const [g, list] of GROUPS){
     if (!inG(g)) continue;
-    const rows = list.filter(d => !q || d.toLowerCase().includes(q) || g.includes(q));
+    const rows = list.filter(d => inD(d) && (!q || d.toLowerCase().includes(q) || g.includes(q)));
     if (!rows.length) continue;
     all.push(...rows);
     body += `<tr class="gh"><td colspan="${sel.length + 2}">${g}</td></tr>`;
@@ -636,16 +745,9 @@ const resP = pr => resF().filter(r => inPer(addDays(r[0], r[5]), pr));
 function periodBar(pr, list, idx){
   return `<section class="pbar" aria-label="조회 기간">
     <div class="prow">
-      <div class="ptabs" role="tablist">${MODES.map(([k, l]) => `<button class="ptab" role="tab" id="pm-${k}" data-pm="${k}" aria-selected="${PS.mode === k}">${l}</button>`).join('')}</div>
       <div class="prange">조회 구간 <b>${pr.multi ? esc(pr.label) : `${fmtD(PS.mode === 'now' ? DAY0 : pr.s)} ~ ${fmtD(pr.e)}`}</b>${pr.open ? ' <span class="tag">진행 중</span>' : ''}</div>
     </div>
-    ${PS.mode !== 'now' ? `<div class="pchips">
-      <button class="pnav" data-pstep="-1" aria-label="이전 기간" ${list.findIndex(x => keysOf(pr).includes(x.key)) <= 0 ? 'disabled' : ''}>‹</button>
-      ${list.map(x => `<button class="chip" data-pk="${x.key}" id="pk-${x.key}" aria-pressed="${keysOf(pr).includes(x.key)}">${x.short}</button>`).join('')}
-      <button class="pnav" data-pstep="1" aria-label="다음 기간" ${list.findLastIndex(x => keysOf(pr).includes(x.key)) >= list.length - 1 ? 'disabled' : ''}>›</button>
-      <span class="psep"></span><button class="chip ghost" data-pall="1" id="p-all">전체 선택</button><button class="chip ghost" data-preset="1" id="p-reset">초기화</button>
-      <span class="phint">여러 개 선택 가능</span></div>` : ''}
-    <span class="pdef">기간 사직율 = 기간 중 사직 인원 ÷ 기간 중 재직한 인원 (기간 시작 전 사직자 제외 · 기간 종료일까지 발령자 포함)</span>
+    <span class="pdef">왼쪽 조회 조건의 기간은 <b>사직일</b> 기준으로 적용됩니다 · 기간 사직율 = 기간 중 사직 인원 ÷ 기간 중 재직한 인원 (기간 시작 전 사직자 제외 · 기간 종료일까지 발령자 포함)</span>
   </section>`;
 }
 
@@ -893,10 +995,31 @@ async function boot(){
   }
 }
 
+function syncPS(){
+  const Y = SB.y === 'all' ? TODAY.getFullYear() : SB.y;
+  if (SB.m.length){ PS.mode = 'month'; PS.keys = SB.m.map(m => `month-${Y}-${m}`); }
+  else if (SB.q.length){ PS.mode = 'quarter'; PS.keys = SB.q.map(q => `quarter-${Y}-${q * 3}`); }
+  else if (SB.y !== 'all'){ PS.mode = 'year'; PS.keys = [`year-${SB.y}-0`]; }
+  else { PS.mode = 'now'; PS.keys = []; }
+}
 function filters(){
-  const fc = document.getElementById('f-c'), fgp = document.getElementById('f-g');
-  fc.innerHTML = [['all','전체'], ...COH.map(c => [c, `${cLab(c)} ${cShort(c)}`])].map(([v, l]) => `<button class="chip" data-fc="${v}" id="fc-${v}" aria-pressed="${S.c === v}">${l}</button>`).join('');
-  fgp.innerHTML = [['all','전체'], ...GNAMES.map(g => [g, g])].map(([v, l]) => `<button class="chip" data-fg="${v}" id="fg-${v}" aria-pressed="${S.g === v}">${l}</button>`).join('');
+  const box = document.getElementById('f-side'); if (!box) return;
+  const years = [...new Set(COH.map(c => +c.slice(0, 4)).concat([TODAY.getFullYear()]))].sort();
+  const Y = SB.y === 'all' ? TODAY.getFullYear() : SB.y;
+  const okQ = new Set(periodList('quarter').map(x => x.key)), okM = new Set(periodList('month').map(x => x.key));
+  const chip = (attr, val, label, on, dis) => `<button class="chip" ${attr}="${val}" aria-pressed="${on}" ${dis ? 'disabled' : ''}>${label}</button>`;
+  const deps = S.g === 'all' ? [] : (GROUPS.find(g => g[0] === S.g)?.[1] || []);
+  box.innerHTML = `
+    <div class="fs"><span class="fl">기준일시</span><div class="cg">${chip('data-sy', 'all', '전체', SB.y === 'all')}${years.map(y => chip('data-sy', y, `${y}년`, SB.y === y)).join('')}</div></div>
+    <div class="fs"><span class="fl">분기</span><div class="cg">${chip('data-sq', 'all', '전체', !SB.q.length)}${[0, 1, 2, 3].map(q => chip('data-sq', q, `${q + 1}분기`, SB.q.includes(q), !okQ.has(`quarter-${Y}-${q * 3}`))).join('')}</div></div>
+    <div class="fs"><span class="fl">월</span><div class="cg mg">${Array.from({ length: 12 }, (_, m) => chip('data-sm', m, `${m + 1}월`, SB.m.includes(m), !okM.has(`month-${Y}-${m}`))).join('')}</div></div>
+    <div class="fs"><label class="fl" for="sel-g">부서</label><select id="sel-g"><option value="all">전체 부서</option>${GNAMES.map(g => `<option value="${g}" ${S.g === g ? 'selected' : ''}>${g}</option>`).join('')}</select></div>
+    <div class="fs"><label class="fl" for="sel-d">세부부서</label><select id="sel-d" ${S.g === 'all' ? 'disabled' : ''}>${S.g === 'all' ? '<option value="all">부서를 먼저 선택</option>' : `<option value="all">전체 (${S.g})</option>${deps.map(d => `<option value="${d}" ${S.d === d ? 'selected' : ''}>${d}</option>`).join('')}`}</select></div>
+    <p class="fhint">${S.page === 'p2' ? '기간은 <b>사직일</b> 기준입니다.' : '기간은 <b>발령일</b> 기준입니다.'}${(SB.q.length || SB.m.length) && SB.y === 'all' ? ` 분기·월은 ${Y}년 기준입니다.` : ''}</p>
+    <button class="freset" data-freset="1">조건 초기화</button>`;
+  const pr = curPeriod();
+  const sum = [PS.mode === 'now' ? '전체 기간' : pr.multi ? pr.label : pr.label, S.d !== 'all' ? S.d : S.g !== 'all' ? S.g : '전체 부서'].join(' · ');
+  const fs = document.getElementById('f-sum'); if (fs) fs.textContent = sum;
 }
 function calc(){
   const n = document.getElementById('c-need'); if (!n) return;
@@ -911,7 +1034,14 @@ function render(){
   stamp();
   filters();
   const v = document.getElementById('view');
-  v.innerHTML = ({ p1, p2, p3 })[S.page]();
+  if (S.page === 'p2' && S.d !== 'all'){
+    // 사직 시점·사유는 개인 식별을 막기 위해 부서군 단위로만 제공되므로, 세부부서 선택 시 소속 부서군 기준으로 보여준다
+    const keep = S.d; let p = 0, r = 0;
+    for (const [k, [pp, rr]] of Object.entries(A.dept)){ const [c, d] = k.split('|'); if (d === keep){ p += pp; r += rr; } }
+    S.d = 'all';
+    v.innerHTML = `<div class="note dnote"><b>${keep}</b> 자체 누적: 발령 ${p}명 · 사직 ${r}명 · 사직율 ${pct(p ? r / p : NaN)}<br>사직 시점·사유 분석은 개인이 드러나지 않도록 소속 부서군(<b>${S.g}</b>) 기준으로 표시합니다.</div>` + p2();
+    S.d = keep;
+  } else v.innerHTML = ({ p1, p2, p3 })[S.page]();
   const sv = document.getElementById('surv'); if (sv) survival(sv);
   calc();
 }
@@ -919,16 +1049,19 @@ document.addEventListener('click', e => {
   const b = e.target.closest('button,th[data-sort],[data-pk]'); if (!b || b.disabled) return;
   if (b.dataset.page){ S.page = b.dataset.page; history.replaceState(null, '', '#' + S.page); render(); window.scrollTo({ top: 0 }); }
   else if (b.dataset.fc){ S.c = b.dataset.fc; render(); }
-  else if (b.dataset.fg){ S.g = b.dataset.fg; S.need = S.erate = undefined; render(); }
+  else if (b.dataset.fg){ S.g = b.dataset.fg; S.d = 'all'; S.need = S.erate = undefined; render(); }
+  else if (b.dataset.sy){ SB.y = b.dataset.sy === 'all' ? 'all' : +b.dataset.sy; syncPS(); render(); }
+  else if (b.dataset.sq){ const q = b.dataset.sq; SB.m = []; SB.q = q === 'all' ? [] : (SB.q.includes(+q) ? SB.q.filter(x => x !== +q) : [...SB.q, +q].sort()); syncPS(); render(); }
+  else if (b.dataset.sm){ const m = +b.dataset.sm; SB.q = []; SB.m = SB.m.includes(m) ? SB.m.filter(x => x !== m) : [...SB.m, m].sort((x, y) => x - y); syncPS(); render(); }
+  else if (b.dataset.freset){ SB.y = 'all'; SB.q = []; SB.m = []; S.g = 'all'; S.d = 'all'; syncPS(); render(); }
+  else if (b.dataset.refresh){ if (typeof boot === 'function') boot(); else render(); }
   else if (b.dataset.pm){ PS.mode = b.dataset.pm; PS.keys = []; render(); }
   else if (b.dataset.pk){
-    const k = b.dataset.pk, m = k.split('-')[0];
-    if (m !== PS.mode){ PS.mode = m; PS.keys = [k]; }
-    else {
-      const L = periodList(m).map(x => x.key), cur = curSel().map(x => x.key);
-      PS.keys = cur.includes(k) ? (cur.length > 1 ? cur.filter(x => x !== k) : cur) : [...cur, k].sort((a, b) => L.indexOf(a) - L.indexOf(b));
-    }
-    render();
+    const [m, y, n] = b.dataset.pk.split('-');
+    if (m === 'month'){ SB.y = +y; SB.q = []; SB.m = SB.m.includes(+n) && PS.mode === 'month' ? SB.m.filter(x => x !== +n) : [...new Set([...(PS.mode === 'month' ? SB.m : []), +n])].sort((a, c) => a - c); }
+    else if (m === 'quarter'){ SB.y = +y; SB.m = []; const q = +n / 3; SB.q = SB.q.includes(q) ? SB.q.filter(x => x !== q) : [...SB.q, q].sort(); }
+    else if (m === 'year'){ SB.y = +y; SB.q = []; SB.m = []; }
+    syncPS(); render();
   }
   else if (b.dataset.pall){ PS.keys = periodList(PS.mode).map(x => x.key); render(); }
   else if (b.dataset.preset){ PS.keys = []; render(); }
@@ -941,6 +1074,11 @@ document.addEventListener('click', e => {
   else if (b.dataset.tab){ S.tab = b.dataset.tab; render(); }
   else if (b.dataset.sort){ const k = b.dataset.sort; S.sort = { k, dir: S.sort.k === k ? -S.sort.dir : (k === 'd' ? 1 : -1) }; render(); }
 });
+document.addEventListener('change', e => {
+  if (e.target.id === 'sel-g'){ S.g = e.target.value; S.d = 'all'; render(); }
+  if (e.target.id === 'sel-d'){ S.d = e.target.value; render(); }
+});
+if (typeof matchMedia === 'function' && matchMedia('(max-width: 820px)').matches){ const fc = document.getElementById('fcard'); if (fc) fc.open = false; }
 document.addEventListener('input', e => {
   if (e.target.id === 'q'){ S.q = e.target.value; const pos = e.target.selectionStart; render(); const q = document.getElementById('q'); q.focus(); q.setSelectionRange(pos, pos); }
   if (e.target.id === 'c-need'){ S.need = e.target.value; calc(); }
