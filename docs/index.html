@@ -431,7 +431,7 @@ body,button,input,select{font-family:var(--f-ui)}
 .gtab td .sh,.gtab tfoot .sh{color:var(--ink2)!important;font-weight:500}
 #tip{max-width:340px;font-size:12.5px;line-height:1.6;padding:10px 12px;border-radius:10px}
 .mgt .bcell{white-space:nowrap}
-.mb2{display:inline-block;vertical-align:middle;width:70px;height:7px;margin-right:8px;border-radius:4px;background:var(--sunk);overflow:hidden}
+.mb2{display:inline-block;vertical-align:middle;width:46px;height:7px;margin-right:8px;border-radius:4px;background:var(--sunk);overflow:hidden}
 .mb2 i{display:block;height:100%;background:var(--s2);border-radius:4px}
 .calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
 .calc label{display:grid;gap:4px;font-size:12px;color:var(--ink2)}
@@ -910,10 +910,10 @@ function p2(){
   for (const [d, [p, r]] of mrows){ const g = grpOf(d); mg[g] ??= [0, 0]; mg[g][0] += p; mg[g][1] += r; }
   const mgRows = GNAMES.filter(g => mg[g]);
   const mgMax = Math.max(.01, ...mgRows.map(g => mg[g][1] / mg[g][0]));
-  const maleGroup = mgRows.length ? `<div class="tw"><table class="mt mgt"><thead><tr><th>부서군</th><th class="num">전체 발령</th><th class="num">남성 발령</th><th class="num">남성 비중</th><th class="num">남성 사직</th><th>남성 사직율</th><th class="num">여성 사직율</th></tr></thead><tbody>
+  const maleGroup = mgRows.length ? `<div class="tw"><table class="mt mgt"><thead><tr><th>부서군</th><th class="num">전체 발령</th><th class="num">남성 발령</th><th class="num">남성 비중</th><th class="num">남성 사직</th><th>남성 사직율 <span class="zero" style="font-weight:400">(▲ 여성보다 10%p↑)</span></th><th class="num">여성 사직율</th></tr></thead><tbody>
       ${mgRows.map(g => { const [p, r] = mg[g], f = gF[g] || [0, 0], mr = r / p, fr = f[0] ? f[1] / f[0] : NaN;
         return `<tr><td><b>${g}</b></td><td class="num">${gAll[g] || 0}명</td><td class="num">${p}명</td><td class="num">${pct(p / Math.max(1, gAll[g] || 0), 0)}</td><td class="num">${r ? `<b class="rdx">${r}명</b>` : '0명'}</td>
-          <td class="bcell"><span class="mb2"><i style="width:${mr / mgMax * 100}%"></i></span><b>${pct(mr, 0)}</b>${isFinite(fr) && mr - fr >= .1 ? ' <span class="dl up">여성보다 ▲</span>' : ''}</td><td class="num">${pct(fr, 0)}</td></tr>`; }).join('')}
+          <td class="bcell"><span class="mb2"><i style="width:${mr / mgMax * 100}%"></i></span><b>${pct(mr, 0)}</b>${isFinite(fr) && mr - fr >= .1 ? ' <span class="dl up" title="여성보다 10%p 이상 높음">▲</span>' : ''}</td><td class="num">${pct(fr, 0)}</td></tr>`; }).join('')}
     </tbody><tfoot><tr><td>합계</td><td class="num">${Object.values(gAll).reduce((s, v) => s + v, 0)}명</td><td class="num">${mT[0]}명</td><td class="num">${pct(mT[0] / Math.max(1, Object.values(gAll).reduce((s, v) => s + v, 0)), 0)}</td><td class="num">${mT[1]}명</td><td><b>${pct(mT[1] / Math.max(1, mT[0]), 0)}</b></td><td class="num">${(() => { const f = Object.values(gF).reduce((s, v) => [s[0] + v[0], s[1] + v[1]], [0, 0]); return pct(f[0] ? f[1] / f[0] : NaN, 0); })()}</td></tr></tfoot></table></div>` : '';
   const maleBlock = mrows.length ? `<div class="subsec"><h3>남성 신규간호사 부서군별 사직</h3><p>누적 기준 (왼쪽 기간 조건은 적용되지 않음) · 남성 비중 = 부서군 전체 발령 중 남성 비율</p></div>${maleGroup}
     <div class="subsec"><h3>남성 신규간호사 부서별 사직</h3><p>누적 기준 · 부서군 조건만 적용</p></div>
