@@ -433,6 +433,45 @@ body,button,input,select{font-family:var(--f-ui)}
 .mgt .bcell{white-space:nowrap}
 .mb2{display:inline-block;vertical-align:middle;width:46px;height:7px;margin-right:8px;border-radius:4px;background:var(--sunk);overflow:hidden}
 .mb2 i{display:block;height:100%;background:var(--s2);border-radius:4px}
+#view > div > .panel.w12{grid-column:auto}
+.rk2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.rkc{border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.rkc h3{margin:0 0 8px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.dotc{width:9px;height:9px;border-radius:50%}
+.rkc ol{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.rkc li{display:grid;grid-template-columns:26px 3.6rem 4.6rem minmax(0,1fr) 3.6rem 3.6rem;gap:8px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line);font-size:13px}
+.rkc li:last-child{border-bottom:0}
+.rk{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;font-size:12px;font-weight:700;color:#fff}
+.rk.h{background:var(--crit)}.rk.l{background:var(--good)}
+.rkc li:nth-child(n+4) .rk{opacity:.7}
+.rbar{height:8px;border-radius:4px;background:var(--sunk);overflow:hidden}
+.rbar i{display:block;height:100%;border-radius:4px}
+.rv2{text-align:right}
+.rkc small{color:var(--muted);text-align:right;font-size:11.5px}
+.ph-r{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.printbtn{height:34px;padding:0 14px;border-radius:8px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.printbtn:hover{background:var(--accent);color:#fff}
+.print-head{display:none}
+@media (max-width:820px){.rk2{grid-template-columns:1fr}.rkc li{grid-template-columns:24px 3.2rem 4.2rem minmax(0,1fr) 3.2rem}.rkc small{display:none}}
+@media print{
+  @page{size:A4 landscape;margin:9mm}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #tip{display:none!important}
+  body.printing{background:#fff}
+  body.printing .topbar,body.printing .side,body.printing .head,body.printing #view > div > :not(#dept-print){display:none!important}
+  body.printing .app{display:block;padding:0;margin:0}
+  body.printing #dept-print{border:0;box-shadow:none;padding:0;gap:8px}
+  body.printing #dept-print .printbtn{display:none}
+  body.printing .print-head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #111;padding-bottom:6px}
+  body.printing .print-head b{font-size:16px}
+  body.printing .print-head span{font-size:10px;color:#444}
+  body.printing #dept-print .ph p{font-size:9px}
+  body.printing #dept-print .tw{overflow:visible}
+  body.printing #dept-print table{font-size:9px}
+  body.printing #dept-print th,body.printing #dept-print td{padding:3px 6px}
+  body.printing #dept-print tr{break-inside:avoid}
+  body.printing #dept-print .note{font-size:8.5px}
+}
 .calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
 .calc label{display:grid;gap:4px;font-size:12px;color:var(--ink2)}
 .calc input{border:1px solid var(--line2);background:var(--surface);border-radius:8px;padding:8px 10px;font-family:var(--f-num);font-size:16px;width:100%}
@@ -1008,6 +1047,22 @@ function p3(){
   const sel = COH.filter(inC);
   const cnt = k => ds.filter(d => d.tier === k).length;
   const worst = [...ds].sort((a, b) => b.rate - a.rate || b.r - a.r)[0];
+  // 사직율 순위: 발령 3명 이상 부서만 (1~2명 부서는 1명 차이로 0%↔100%가 되어 제외)
+  const pool = ds.filter(d => d.p >= 3);
+  const rkN = Math.min(5, Math.ceil(pool.length / 2)); // 부서가 적으면 높은/낮은 목록이 겹치지 않도록 절반까지만
+  const hiR = [...pool].sort((a, b) => b.rate - a.rate || b.r - a.r || b.p - a.p).slice(0, rkN);
+  const loR = [...pool].sort((a, b) => a.rate - b.rate || b.p - a.p || deptOrder(a.d, b.d)).slice(0, rkN);
+  const rkMax = Math.max(.01, ...pool.map(d => d.rate));
+  const rkRow = (d, i, hi) => `<li data-tip="${d.d} (${d.g}) · ${TIER[d.tier][1]}\n사직 ${d.r} / 발령 ${d.p}명 = ${pct(d.rate)}${PREV[d.d] ? `\n전년 ${pct(PREV[d.d][1])}` : ''}">
+      <span class="rk ${hi ? 'h' : 'l'}">${i + 1}</span><b class="rd2">${d.d}</b><span class="tag">${d.g}</span>
+      <span class="rbar"><i style="width:${Math.max(d.rate / rkMax * 100, 1)}%;background:${hi ? 'var(--crit)' : 'var(--good)'}"></i></span>
+      <b class="num rv2">${pct(d.rate)}</b><small class="num">${d.r}/${d.p}명</small></li>`;
+  const scopeTxt = `${PS.mode === 'now' ? '전체 기간' : curPeriod().label} · ${S.d !== 'all' ? S.d : S.g !== 'all' ? S.g : '전체 부서'}`;
+  const rankPanel = pool.length >= 2 ? `<section class="panel w12 rank"><div class="ph"><div><h2>부서별 사직율 순위</h2><p>${scopeTxt} · 발령 3명 이상 부서 ${pool.length}곳 · 같은 사직율이면 높은 순위는 사직 인원이 많은 순, 낮은 순위는 발령 인원이 많은 순</p></div></div>
+    <div class="rk2">
+      <div class="rkc"><h3><span class="dotc" style="background:var(--crit)"></span>사직율 높은 부서 TOP ${hiR.length}</h3><ol>${hiR.map((d, i) => rkRow(d, i, true)).join('')}</ol></div>
+      <div class="rkc"><h3><span class="dotc" style="background:var(--good)"></span>사직율 낮은 부서 TOP ${loR.length}</h3><ol>${loR.map((d, i) => rkRow(d, i, false)).join('')}</ol></div>
+    </div></section>` : '';
   const col = { crit:'var(--crit)', warn:'var(--warn)', good:'var(--good)', none:'var(--line2)' };
   const groups = GROUPS.filter(([g]) => inG(g)).map(([g, list]) => ({ g, rows: list.map(d => by[d]).filter(Boolean) })).filter(x => x.rows.length);
   const whole = S.g === 'all' && S.c === 'all';
@@ -1066,8 +1121,9 @@ function p3(){
     ${kpi(stBadge('good'), cnt('good'), '개 부서', '사직율 20% 미만')}
     ${kpi('최고 사직율 부서', worst ? worst.d : '–', '', worst ? `<b class="num">${pct(worst.rate)}</b> (${worst.r}/${worst.p}명)` : '')}
   </div>
-  <section class="panel w12 hero"><div class="ph"><div><h2>부서별 사직 현황</h2><p>회차 칸은 사직 / 발령 인원 · 사직율 옆 ▲▼는 ${Y1}년 대비 증감(%p) · 전년도 30% 이상은 빨간 글씨</p></div>
-    <div class="legend">${['crit', 'warn', 'good'].map(k => `<span>${sig(k)}</span>`).join('')}</div></div>${table}
+  ${rankPanel}
+  <section class="panel w12 hero" id="dept-print"><div class="print-head"><b>신규간호사 부서별 사직 현황</b><span>조회 조건: ${scopeTxt} · 출력일 ${fmtD(new Date())} · 해운대백병원 간호국</span></div><div class="ph"><div><h2>부서별 사직 현황</h2><p>회차 칸은 사직 / 발령 인원 · 사직율 옆 ▲▼는 ${Y1}년 대비 증감(%p) · 전년도 30% 이상은 빨간 글씨</p></div>
+    <div class="ph-r"><div class="legend">${['crit', 'warn', 'good'].map(k => `<span>${sig(k)}</span>`).join('')}</div><button class="printbtn" data-print="dept" title="이 표만 인쇄하거나 PDF로 저장합니다">⎙ 인쇄 · PDF 저장</button></div></div>${table}
     <div class="note">전년도 사직율은 시트 '부서별 발령/사직'의 ${Y1}·${Y2}년 값을 사용합니다 (${Object.keys(PREV).length}개 부서). 값이 없는 부서는 "–"로 표시됩니다.</div></section>
   <div class="grid">
     <section class="panel w8"><div class="ph"><div><h2>부서별 3개년 사직율 비교</h2><p>발령현황과 같은 부서 순서 · 막대 색 = ${Y0} 위험 신호</p></div>
@@ -1185,6 +1241,12 @@ document.addEventListener('click', e => {
   else if (b.dataset.sq){ const q = b.dataset.sq; SB.m = []; SB.q = q === 'all' ? [] : (SB.q.includes(+q) ? SB.q.filter(x => x !== +q) : [...SB.q, +q].sort()); syncPS(); render(); }
   else if (b.dataset.sm){ const m = +b.dataset.sm; SB.q = []; SB.m = SB.m.includes(m) ? SB.m.filter(x => x !== m) : [...SB.m, m].sort((x, y) => x - y); syncPS(); render(); }
   else if (b.dataset.freset){ SB.y = 'all'; SB.q = []; SB.m = []; S.g = 'all'; S.d = 'all'; syncPS(); render(); }
+  else if (b.dataset.print){
+    document.body.classList.add('printing');
+    const prevTitle = document.title;
+    document.title = '신규간호사_부서별_사직현황_' + fmtD(new Date()).replaceAll('.', '');
+    setTimeout(() => { window.print(); document.title = prevTitle; }, 50);
+  }
   else if (b.dataset.refresh){ if (typeof boot === 'function') boot(); else render(); }
   else if (b.dataset.pm){ PS.mode = b.dataset.pm; PS.keys = []; render(); }
   else if (b.dataset.pk){
@@ -1205,6 +1267,7 @@ document.addEventListener('click', e => {
   else if (b.dataset.tab){ S.tab = b.dataset.tab; render(); }
   else if (b.dataset.sort){ const k = b.dataset.sort; S.sort = { k, dir: S.sort.k === k ? -S.sort.dir : (k === 'd' ? 1 : -1) }; render(); }
 });
+addEventListener('afterprint', () => document.body.classList.remove('printing'));
 document.addEventListener('change', e => {
   if (e.target.id === 'sel-g'){ S.g = e.target.value; S.d = 'all'; render(); }
   if (e.target.id === 'sel-d'){ S.d = e.target.value; render(); }
