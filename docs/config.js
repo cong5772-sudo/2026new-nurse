@@ -4,6 +4,9 @@ window.DASH_CONFIG = {
   // Apps Script 웹앱 주소 (README.md 2단계에서 복사한 주소, 끝이 /exec)
   API_URL: 'https://script.google.com/macros/s/AKfycbwc5zxAp7yP95XZmlEhLCVEZrtlzZ8_xMTVWn1y7gKYV6iSpH8otHqx5jFXSMv7u8Pn/exec',
 
+  // 관리자 전용 사직자 명단 페이지 (원본 시트 접근 권한이 있는 계정만 열람)
+  ADMIN_URL: 'https://script.google.com/macros/s/AKfycbxcWbV3KAnq5ivlE_AuhsmF8bMcci980Qk1rNUwtN49pQUdnZjpAY-FaXAmD9fyFTQygA/exec',
+
   // 관리 목표 사직율 (0.20 = 20%)
   TARGET: 0.20,
 

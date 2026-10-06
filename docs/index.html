@@ -498,6 +498,9 @@ body,button,input,select{font-family:var(--f-ui)}
   body.printing .dt2 tfoot{display:table-row-group}
   body.printing .pr-foot{display:flex;justify-content:space-between;margin-top:3mm;padding-top:1.5mm;border-top:.6pt solid #999;font-size:7.5pt;color:#555}
 }
+.adminbtn{display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--line2);background:var(--surface);color:var(--ink2);font-size:12.5px;font-weight:600;text-decoration:none;white-space:nowrap}
+.adminbtn:hover{border-color:var(--accent);color:var(--accent)}
+.rkt{margin-top:4px}
 .calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
 .calc label{display:grid;gap:4px;font-size:12px;color:var(--ink2)}
 .calc input{border:1px solid var(--line2);background:var(--surface);border-radius:8px;padding:8px 10px;font-family:var(--f-num);font-size:16px;width:100%}
@@ -912,6 +915,13 @@ function p2(){
   const refs = r => [...(showT ? [{ v: TARGET, label: '목표 20%' }] : []), ...(isFinite(r) ? [{ v: r, label: '평균', cls: 'avg' }] : [])];
   const legend = r => `<div class="legend">${showT ? '<span><i></i>목표 20%</span>' : ''}${isFinite(r) ? `<span><i style="--rc:var(--muted)"></i>기간 평균 ${pct(r)}</span>` : ''}</div>`;
 
+  // 관리자 전용 사직자 명단 (이름은 공개 대시보드에 싣지 않고 권한 있는 계정만 열람)
+  const adminLink = () => {
+    const url = (window.DASH_CONFIG || {}).ADMIN_URL; if (!url) return '';
+    const mk = PS.mode === 'month' && keysOf(pr).length === 1 ? keysOf(pr)[0].split('-') : null;
+    const m = mk ? `${mk[1]}-${String(+mk[2] + 1).padStart(2, '0')}` : '';
+    return `<a class="adminbtn" href="${url}${m ? '?m=' + m : ''}" target="_blank" rel="noopener" title="원본 시트 접근 권한이 있는 계정만 열 수 있습니다">사직자 명단 (관리자) ↗</a>`;
+  };
   // 막대에 마우스를 올리면 그 기간 사직자 구성(회차·부서군·시기·사유·근속)을 보여준다 (개인 정보 없음)
   const trendTip = o => {
     const rs = resF().filter(r => inPer(addDays(r[0], r[5]), o.x));
@@ -920,7 +930,7 @@ function p2(){
     const avg = tot ? Math.round(rs.reduce((s, r) => s + r[5] * r[6], 0) / tot) : 0;
     return `${o.x.label}${o.x.open ? ' (진행 중)' : ''}\n사직 ${o.r}명 / 재직 ${o.n}명 · 사직율 ${o.n ? pct(o.r / o.n) : '–'}`
       + (tot ? `\n──────────\n발령회차: ${cnt(r => cLab(r[0]))}\n부서군: ${cnt(r => r[1])}\n사직 시기: ${cnt(r => r[2])}\n사직 사유: ${cnt(r => r[3].split(',').map(s => s.trim()))}\n평균 근속: ${avg}일 (약 ${(avg / 30.44).toFixed(1)}개월)` : '\n이 기간 사직자 없음')
-      + '\n(누르면 선택 / 해제)';
+      + '\n(누르면 선택 / 해제 · 이름은 사직자 명단(관리자)에서 확인)';
   };
   // 추이: 현재 모드는 월별, 그 외는 선택한 단위 전체
   const tl = PS.mode === 'now' ? periodList('month') : list;
@@ -998,7 +1008,7 @@ function p2(){
   </div>
   <div class="grid">
     <section class="panel w12"><div class="ph"><div><h2>${PS.mode === 'now' ? '월별' : MODES.find(m => m[0] === PS.mode)[1] + '별'} 사직 추이</h2><p>막대: 사직 인원 · 아래: 기간 사직율 · 막대를 눌러 여러 기간을 함께 선택</p></div>
-      ${PS.mode !== 'now' ? `<div class="legend"><span><i class="sw" style="--c:var(--s1)"></i>선택한 기간</span><span><i class="sw" style="--c:color-mix(in oklab, var(--s1) 32%, var(--surface))"></i>다른 기간</span></div>` : ''}</div>
+      <div class="ph-r">${PS.mode !== 'now' ? `<div class="legend"><span><i class="sw" style="--c:var(--s1)"></i>선택한 기간</span><span><i class="sw" style="--c:color-mix(in oklab, var(--s1) 32%, var(--surface))"></i>다른 기간</span></div>` : ''}${adminLink()}</div></div>
       ${trendHtml}</section>
     <section class="panel w12"><div class="ph"><div><h2>부서 구분별 사직율</h2><p>${esc(pr.label)} · 기간 중 재직 인원 대비 사직 인원 · 상단 부서군 필터와 함께 적용</p></div>${legend(rate)}</div>
       ${gsP.length ? `<div class="split">
@@ -1028,6 +1038,11 @@ function p2(){
       ${hbars(rateItems(AI_ORDER, fa), { max: fmax(fa), refs: showT ? [{ v: TARGET }] : [] })}</section>
     <section class="panel"><div class="ph"><div><h2>석차백분율 구간별 사직율</h2><p>값이 작을수록 상위 석차</p></div>${legend()}</div>
       ${hbars(rateItems(RANK_ORDER, fr), { max: fmax(fr), refs: showT ? [{ v: TARGET }] : [] })}
+      ${(() => { const ks = RANK_ORDER.filter(k => fr[k]); if (!ks.length) return '';
+        const N = ks.reduce((s, k) => s + fr[k][0], 0), R = ks.reduce((s, k) => s + fr[k][1], 0);
+        return `<div class="tw"><table class="mt rkt"><thead><tr><th>석차 구간</th><th class="num">${PS.mode === 'now' ? '발령' : '기간 중 재직'}</th><th class="num">사직</th><th class="num">사직율</th><th class="num">구간 비중</th><th class="num">사직자 중 비중</th></tr></thead><tbody>
+          ${ks.map(k => { const [n, r] = fr[k]; return `<tr${k === '미기재' ? ' class="zrow"' : ''}><td><b>${k}</b></td><td class="num">${n}명</td><td class="num">${r ? `<b class="rdx">${r}명</b>` : '0명'}</td><td class="num"><b>${pct(r / n)}</b></td><td class="num">${pct(n / Math.max(1, N), 0)}</td><td class="num">${R ? pct(r / R, 0) : '–'}</td></tr>`; }).join('')}
+          </tbody><tfoot><tr><td>합계</td><td class="num">${N}명</td><td class="num">${R}명</td><td class="num">${pct(R / Math.max(1, N))}</td><td class="num">100%</td><td class="num">${R ? '100%' : '–'}</td></tr></tfoot></table></div>`; })()}
       ${PS.mode === 'now' ? '<div class="note">등급·구간별 인원(n)이 적으면 1~2명 차이로 사직율이 크게 달라집니다. 빗금 막대(10명 미만)는 해석에 주의하세요.</div>' : ''}</section>
     <section class="panel"><div class="ph"><div><h2>사직사유 분포</h2><p>기간 중 사직자 · 복수 사유는 각각 집계</p></div>
       ${t.r && unknown / t.r > .3 ? `<span class="st warn"><i aria-hidden="true">▲</i>사유 불명 ${pct(unknown / t.r, 0)}</span>` : ''}</div>
