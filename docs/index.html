@@ -451,26 +451,52 @@ body,button,input,select{font-family:var(--f-ui)}
 .ph-r{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .printbtn{height:34px;padding:0 14px;border-radius:8px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
 .printbtn:hover{background:var(--accent);color:#fff}
-.print-head{display:none}
+.print-head,.pr-foot{display:none}
 @media (max-width:820px){.rk2{grid-template-columns:1fr}.rkc li{grid-template-columns:24px 3.2rem 4.2rem minmax(0,1fr) 3.2rem}.rkc small{display:none}}
 @media print{
-  @page{size:A4 landscape;margin:9mm}
+  @page{size:A4 portrait;margin:11mm 12mm 10mm 12mm}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   #tip{display:none!important}
-  body.printing{background:#fff}
+  body.printing{background:#fff;color:#111;font-size:9pt}
+  html,body.printing{height:auto!important;min-height:0!important;padding:0!important}
+  body.printing .app,body.printing .main,body.printing #view,body.printing #view > div{height:auto!important;min-height:0!important;padding:0!important;margin:0!important;gap:0!important}
+  body.printing #dept-print > :last-child{margin-bottom:0}
   body.printing .topbar,body.printing .side,body.printing .head,body.printing #view > div > :not(#dept-print){display:none!important}
   body.printing .app{display:block;padding:0;margin:0}
-  body.printing #dept-print{border:0;box-shadow:none;padding:0;gap:8px}
-  body.printing #dept-print .printbtn{display:none}
-  body.printing .print-head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #111;padding-bottom:6px}
-  body.printing .print-head b{font-size:16px}
-  body.printing .print-head span{font-size:10px;color:#444}
-  body.printing #dept-print .ph p{font-size:9px}
-  body.printing #dept-print .tw{overflow:visible}
-  body.printing #dept-print table{font-size:9px}
-  body.printing #dept-print th,body.printing #dept-print td{padding:3px 6px}
-  body.printing #dept-print tr{break-inside:avoid}
-  body.printing #dept-print .note{font-size:8.5px}
+  body.printing #dept-print{display:block;border:0;box-shadow:none;padding:0;background:#fff}
+  body.printing #dept-print > .ph,body.printing #dept-print > .note{display:none!important}
+  /* 머리말 */
+  body.printing .print-head{display:block;margin-bottom:3.5mm}
+  body.printing .pr-top{display:flex;justify-content:space-between;font-size:8pt;color:#555;border-bottom:.6pt solid #999;padding-bottom:1.5mm}
+  body.printing .pr-title{margin:4mm 0 2.5mm;text-align:center;font-size:15pt;font-weight:700;letter-spacing:-.01em}
+  body.printing .pr-meta{display:flex;justify-content:space-between;font-size:8.5pt;color:#333;margin-bottom:2mm}
+  body.printing .pr-meta b{font-weight:700;margin-right:2mm}
+  body.printing .pr-sum{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9pt}
+  body.printing .pr-sum th,body.printing .pr-sum td{border:.6pt solid #888;padding:1.6mm 1mm;text-align:center;white-space:nowrap}
+  body.printing .pr-sum th{background:#eef1f6;font-weight:700;color:#222}
+  body.printing .pr-sum td{font-weight:600}
+  body.printing .pr-guide{margin:2.5mm 0 0;font-size:7.5pt;color:#444}
+  /* 본 표 */
+  body.printing #dept-print .tw{overflow:visible;border:0}
+  body.printing .dt2{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9pt}
+  body.printing .dt2 .sigc{display:none}
+  body.printing .gt th:first-child,body.printing .gt td:first-child{position:static!important}
+  body.printing .dt2 th,body.printing .dt2 td{border:.5pt solid #9aa3b2!important;padding:.7mm 1mm!important;text-align:center!important;font-size:8.6pt!important;line-height:1.2;box-shadow:none!important;background:#fff;color:#111}
+  body.printing .dt2 thead th{background:#e9edf4!important;color:#111!important;font-weight:700!important;vertical-align:middle}
+  body.printing .dt2 thead .band th{background:#dfe5ef!important}
+  body.printing .dt2 th .d{color:#444;font-weight:400}
+  body.printing .dt2 td:first-child,body.printing .dt2 th:first-child{text-align:left!important;padding-left:2mm!important;width:13%}
+  body.printing .dt2 tr.gh td{background:#f3f5f9!important;font-weight:700;text-align:left!important;color:#1f3a68}
+  body.printing .dt2 tr.sub td{background:#fafbfc!important;font-weight:700}
+  body.printing .dt2 tfoot td{background:#e9edf4!important;font-weight:700;border-top:1.2pt solid #333!important}
+  body.printing .dt2 td b,body.printing .dt2 td.y6 b{font-size:8.6pt!important}
+  body.printing .dt2 .dl{display:none!important}
+  body.printing .dt2 th .d{display:block;font-size:7.5pt;font-weight:400}
+  body.printing .dt2 .of{color:#555}
+  body.printing .dt2 tr{break-inside:avoid}
+  body.printing .dt2 thead{display:table-header-group}
+  body.printing .dt2 tfoot{display:table-row-group}
+  body.printing .pr-foot{display:flex;justify-content:space-between;margin-top:3mm;padding-top:1.5mm;border-top:.6pt solid #999;font-size:7.5pt;color:#555}
 }
 .calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
 .calc label{display:grid;gap:4px;font-size:12px;color:var(--ink2)}
@@ -1076,7 +1102,7 @@ function p3(){
   const sumBy = (rows, c) => rows.reduce((s, d) => { const [p, r] = d.by[c] || [0, 0]; return [s[0] + p, s[1] + r]; }, [0, 0]);
   const coh = ([p, r]) => p ? `<td class="num">${r ? `<b class="rd">${r}</b>` : '<span class="zero">0</span>'}<span class="of"> / ${p}</span></td>` : `<td class="num zero">–</td>`;
   const sig = k => `<span class="sig ${k}"><i aria-hidden="true"></i>${TIER[k][1]}</span>`;
-  const span = sel.length + 7;
+  const span = sel.length + (S.printing ? 6 : 7); // 인쇄 때는 신호 열 제외
   let body = '';
   for (const { g, rows } of groups){
     body += `<tr class="gh"><td colspan="${span}">${g}</td></tr>`;
@@ -1085,16 +1111,16 @@ function p3(){
       <td class="num">${d.p}명</td><td class="num">${d.r}명</td>
       <td class="num y6 ys"><b>${pct(d.rate)}</b>${delta(d.rate, PREV[d.d]?.[1])}</td>
       <td class="num yp">${rateTxt(PREV[d.d]?.[1])}</td><td class="num yp">${rateTxt(PREV[d.d]?.[0])}</td>
-      <td>${sig(d.tier)}</td></tr>`).join('');
+      ${S.printing ? '' : `<td class="sigc">${sig(d.tier)}</td>`}</tr>`).join('');
     const p = rows.reduce((s, d) => s + d.p, 0), r = rows.reduce((s, d) => s + d.r, 0);
-    body += `<tr class="sub"><td>${g} 소계</td>${sel.map(c => coh(sumBy(rows, c))).join('')}<td class="num">${p}명</td><td class="num">${r}명</td><td class="num y6 ys"><b>${pct(r / p)}</b></td><td class="num yp zero">–</td><td class="num yp zero">–</td><td></td></tr>`;
+    body += `<tr class="sub"><td>${g} 소계</td>${sel.map(c => coh(sumBy(rows, c))).join('')}<td class="num">${p}명</td><td class="num">${r}명</td><td class="num y6 ys"><b>${pct(r / p)}</b></td><td class="num yp zero">–</td><td class="num yp zero">–</td>${S.printing ? '' : '<td class="sigc"></td>'}</tr>`;
   }
   const all = groups.flatMap(x => x.rows);
   const foot = `<tr><td>전체 합계</td>${sel.map(c => coh(sumBy(all, c))).join('')}<td class="num">${t.p}명</td><td class="num">${t.r}명</td>
     <td class="num y6 ys"><b>${pct(avg)}</b>${whole ? delta(avg, pa(Y1).rate) : ''}</td>
-    <td class="num yp">${whole ? rateTxt(pa(Y1).rate) : '<span class="zero">–</span>'}</td><td class="num yp">${whole ? rateTxt(pa(Y2).rate) : '<span class="zero">–</span>'}</td><td></td></tr>`;
-  const table = `<div class="tw"><table class="gt dt2"><thead>
-    <tr class="band"><th rowspan="2">부서</th><th colspan="${sel.length}">회차별 사직 / 발령</th><th colspan="2">${Y0} 누적</th><th colspan="3" class="ys">사직율</th><th rowspan="2">신호</th></tr>
+    <td class="num yp">${whole ? rateTxt(pa(Y1).rate) : '<span class="zero">–</span>'}</td><td class="num yp">${whole ? rateTxt(pa(Y2).rate) : '<span class="zero">–</span>'}</td>${S.printing ? '' : '<td class="sigc"></td>'}</tr>`;
+  const table = `<div class="tw"><table class="gt dt2">${S.printing ? `<colgroup><col style="width:13%">${sel.map(() => `<col style="width:${(40 / sel.length).toFixed(2)}%">`).join('')}<col style="width:8%"><col style="width:8%"><col style="width:11%"><col style="width:10%"><col style="width:10%"></colgroup>` : ''}<thead>
+    <tr class="band"><th rowspan="2">부서</th><th colspan="${sel.length}">회차별 사직 / 발령</th><th colspan="2">${Y0} 누적</th><th colspan="3" class="ys">사직율</th>${S.printing ? '' : '<th rowspan="2" class="sigc">신호</th>'}</tr>
     <tr>${sel.map(c => `<th class="num coh">${cLab(c)} <span class="d">${cShort(c)}</span></th>`).join('')}<th class="num">발령</th><th class="num">사직</th><th class="num y6h ys">${Y0}</th><th class="num">${Y1}</th><th class="num">${Y2}</th></tr></thead>
     <tbody>${body}</tbody><tfoot>${foot}</tfoot></table></div>`;
 
@@ -1122,8 +1148,15 @@ function p3(){
     ${kpi('최고 사직율 부서', worst ? worst.d : '–', '', worst ? `<b class="num">${pct(worst.rate)}</b> (${worst.r}/${worst.p}명)` : '')}
   </div>
   ${rankPanel}
-  <section class="panel w12 hero" id="dept-print"><div class="print-head"><b>신규간호사 부서별 사직 현황</b><span>조회 조건: ${scopeTxt} · 출력일 ${fmtD(new Date())} · 해운대백병원 간호국</span></div><div class="ph"><div><h2>부서별 사직 현황</h2><p>회차 칸은 사직 / 발령 인원 · 사직율 옆 ▲▼는 ${Y1}년 대비 증감(%p) · 전년도 30% 이상은 빨간 글씨</p></div>
+  <section class="panel w12 hero" id="dept-print"><div class="print-head">
+      <div class="pr-top"><span>인제대학교 해운대백병원 간호국 · 간호교육팀</span><span>출력일 ${fmtD(new Date())}</span></div>
+      <h1 class="pr-title">신규간호사 부서별 사직 현황</h1>
+      <div class="pr-meta"><span><b>조회 조건</b> ${scopeTxt}</span><span><b>기준일</b> ${fmtD(TODAY)}</span></div>
+      <table class="pr-sum"><tr><th>총 발령</th><td>${t.p}명</td><th>사직</th><td>${t.r}명</td><th>사직율</th><td>${pct(avg)}</td><th>위험 부서</th><td>${cnt('crit')}곳</td><th>주의 부서</th><td>${cnt('warn')}곳</td></tr></table>
+      <p class="pr-guide">※ 회차 칸은 <b>사직 / 발령</b> 인원 · 사직율은 누적 사직 ÷ 누적 발령 · 전년도 사직율 30% 이상은 붉은 글씨 · 소계는 부서 구분별 합계</p>
+    </div><div class="ph"><div><h2>부서별 사직 현황</h2><p>회차 칸은 사직 / 발령 인원 · 사직율 옆 ▲▼는 ${Y1}년 대비 증감(%p) · 전년도 30% 이상은 빨간 글씨</p></div>
     <div class="ph-r"><div class="legend">${['crit', 'warn', 'good'].map(k => `<span>${sig(k)}</span>`).join('')}</div><button class="printbtn" data-print="dept" title="이 표만 인쇄하거나 PDF로 저장합니다">⎙ 인쇄 · PDF 저장</button></div></div>${table}
+    <div class="pr-foot"><span>신규간호사 발령 유지관리 시스템</span><span>원본: 구글 시트 '26신규명단' · 전년도 사직율: '부서별 발령/사직' 탭</span></div>
     <div class="note">전년도 사직율은 시트 '부서별 발령/사직'의 ${Y1}·${Y2}년 값을 사용합니다 (${Object.keys(PREV).length}개 부서). 값이 없는 부서는 "–"로 표시됩니다.</div></section>
   <div class="grid">
     <section class="panel w8"><div class="ph"><div><h2>부서별 3개년 사직율 비교</h2><p>발령현황과 같은 부서 순서 · 막대 색 = ${Y0} 위험 신호</p></div>
@@ -1242,6 +1275,7 @@ document.addEventListener('click', e => {
   else if (b.dataset.sm){ const m = +b.dataset.sm; SB.q = []; SB.m = SB.m.includes(m) ? SB.m.filter(x => x !== m) : [...SB.m, m].sort((x, y) => x - y); syncPS(); render(); }
   else if (b.dataset.freset){ SB.y = 'all'; SB.q = []; SB.m = []; S.g = 'all'; S.d = 'all'; syncPS(); render(); }
   else if (b.dataset.print){
+    S.printing = true; render();
     document.body.classList.add('printing');
     const prevTitle = document.title;
     document.title = '신규간호사_부서별_사직현황_' + fmtD(new Date()).replaceAll('.', '');
@@ -1267,7 +1301,7 @@ document.addEventListener('click', e => {
   else if (b.dataset.tab){ S.tab = b.dataset.tab; render(); }
   else if (b.dataset.sort){ const k = b.dataset.sort; S.sort = { k, dir: S.sort.k === k ? -S.sort.dir : (k === 'd' ? 1 : -1) }; render(); }
 });
-addEventListener('afterprint', () => document.body.classList.remove('printing'));
+addEventListener('afterprint', () => { document.body.classList.remove('printing'); if (S.printing){ S.printing = false; render(); } });
 document.addEventListener('change', e => {
   if (e.target.id === 'sel-g'){ S.g = e.target.value; S.d = 'all'; render(); }
   if (e.target.id === 'sel-d'){ S.d = e.target.value; render(); }
