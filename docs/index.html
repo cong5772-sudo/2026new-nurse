@@ -9,7 +9,6 @@
 <title>신규간호사 발령 유지관리 시스템</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
 /* 기본 리셋 */
 body{margin:0}[hidden]{display:none!important}img{max-width:100%}
@@ -428,6 +427,12 @@ body,button,input,select{font-family:var(--f-ui)}
 .mt tr.top td{background:color-mix(in oklab,var(--s2) 9%,transparent)}
 .rdx{color:var(--crit-ink)}
 .vb .xl span{white-space:pre-line}
+.gtab td.heat{color:var(--ink);font-weight:600}
+.gtab td .sh,.gtab tfoot .sh{color:var(--ink2)!important;font-weight:500}
+#tip{max-width:340px;font-size:12.5px;line-height:1.6;padding:10px 12px;border-radius:10px}
+.mgt .bcell{white-space:nowrap}
+.mb2{display:inline-block;vertical-align:middle;width:70px;height:7px;margin-right:8px;border-radius:4px;background:var(--sunk);overflow:hidden}
+.mb2 i{display:block;height:100%;background:var(--s2);border-radius:4px}
 .calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
 .calc label{display:grid;gap:4px;font-size:12px;color:var(--ink2)}
 .calc input{border:1px solid var(--line2);background:var(--surface);border-radius:8px;padding:8px 10px;font-family:var(--f-num);font-size:16px;width:100%}
@@ -682,7 +687,7 @@ function p1(){
   const gm = bcs.map(b => ({ c: b.c, v: gcols.map(g => gp(b.c, g)) }));
   const gmax = Math.max(1, ...gm.flatMap(r => r.v));
   const gtot = gcols.map((g, i) => gm.reduce((s, r) => s + r.v[i], 0));
-  const gcell = (v, rowTot) => v ? `<td class="num heat ${v / gmax > .65 ? 'hi' : ''}" style="--p:${Math.round(v / gmax * 60)}%">${v}명<small class="sh">${pct(v / Math.max(1, rowTot), 0)}</small></td>` : `<td class="num zero">0명</td>`;
+  const gcell = (v, rowTot) => v ? `<td class="num heat" style="--p:${Math.round(v / gmax * 26)}%">${v}명<small class="sh">${pct(v / Math.max(1, rowTot), 0)}</small></td>` : `<td class="num zero">0명</td>`;
   const grpTable = `<div class="tw"><table class="gt gtab"><thead><tr><th>회차</th>${gcols.map(g => `<th class="num">${g}</th>`).join('')}<th class="num">합계</th></tr></thead><tbody>
     ${gm.map(r => { const rt = r.v.reduce((s, x) => s + x, 0); return `<tr><td><b>${cLab(r.c)}</b> <span class="zero">${cShort(r.c)}</span></td>${r.v.map(v => gcell(v, rt)).join('')}<td class="num"><b>${rt}명</b></td></tr>`; }).join('')}
     </tbody><tfoot><tr><td>합계</td>${gtot.map(v => `<td class="num">${v}명<small class="sh">${pct(v / Math.max(1, t.p), 0)}</small></td>`).join('')}<td class="num">${t.p}명</td></tr></tfoot></table></div>`;
@@ -842,12 +847,22 @@ function p2(){
   const refs = r => [...(showT ? [{ v: TARGET, label: '목표 20%' }] : []), ...(isFinite(r) ? [{ v: r, label: '평균', cls: 'avg' }] : [])];
   const legend = r => `<div class="legend">${showT ? '<span><i></i>목표 20%</span>' : ''}${isFinite(r) ? `<span><i style="--rc:var(--muted)"></i>기간 평균 ${pct(r)}</span>` : ''}</div>`;
 
+  // 막대에 마우스를 올리면 그 기간 사직자 구성(회차·부서군·시기·사유·근속)을 보여준다 (개인 정보 없음)
+  const trendTip = o => {
+    const rs = resF().filter(r => inPer(addDays(r[0], r[5]), o.x));
+    const tot = rs.reduce((s, r) => s + r[6], 0);
+    const cnt = f => { const m = {}; for (const r of rs) for (const k of [].concat(f(r))) m[k] = (m[k] || 0) + r[6]; return Object.entries(m).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}명`).join(' · '); };
+    const avg = tot ? Math.round(rs.reduce((s, r) => s + r[5] * r[6], 0) / tot) : 0;
+    return `${o.x.label}${o.x.open ? ' (진행 중)' : ''}\n사직 ${o.r}명 / 재직 ${o.n}명 · 사직율 ${o.n ? pct(o.r / o.n) : '–'}`
+      + (tot ? `\n──────────\n발령회차: ${cnt(r => cLab(r[0]))}\n부서군: ${cnt(r => r[1])}\n사직 시기: ${cnt(r => r[2])}\n사직 사유: ${cnt(r => r[3].split(',').map(s => s.trim()))}\n평균 근속: ${avg}일 (약 ${(avg / 30.44).toFixed(1)}개월)` : '\n이 기간 사직자 없음')
+      + '\n(누르면 선택 / 해제)';
+  };
   // 추이: 현재 모드는 월별, 그 외는 선택한 단위 전체
   const tl = PS.mode === 'now' ? periodList('month') : list;
   const trend = tl.map(x => ({ x, ...perTotals(x) }));
   const trendHtml = vbars(trend.map(o => ({ label: o.x.short, sub: o.n ? pct(o.r / o.n) : '–', v: o.r, vl: o.r + '명',
     c: PS.mode === 'now' || keysOf(pr).includes(o.x.key) ? 'var(--s1)' : 'color-mix(in oklab, var(--s1) 32%, var(--surface))',
-    attr: `data-pk="${o.x.key}"`, tip: `${o.x.label}${o.x.open ? ' (진행 중)' : ''}\n사직 ${o.r}명 / 재직 ${o.n}명 · 기간 사직율 ${o.n ? pct(o.r / o.n) : '–'}\n누르면 선택 / 해제` })), { h: 170 });
+    attr: `data-pk="${o.x.key}"`, tip: trendTip(o) })), { h: 170 });
 
   const hmax = Math.max(1, ...bc.flatMap(b => PERIODS.map(p => res.filter(r => r[0] === b.c && r[2] === p).reduce((s, r) => s + r[6], 0))));
   const heat = `<div class="tw"><table class="ht"><thead><tr><th>발령회차</th>${PERIODS.map(p => `<th class="num">${p.replace(' 이내','').replace(' 이상','+')}</th>`).join('')}<th class="num">사직 합</th><th class="num">3개월 내 비중</th></tr></thead><tbody>
@@ -887,7 +902,21 @@ function p2(){
   for (const [k, [p, r]] of Object.entries(A.maleDept || {})){ const d = k.split('|')[1]; if (!inG(grpOf(d))) continue; md[d] ??= [0, 0]; md[d][0] += p; md[d][1] += r; }
   const mrows = Object.entries(md).sort((a, b) => deptOrder(a[0], b[0]));
   const mT = mrows.reduce((s, [, v]) => [s[0] + v[0], s[1] + v[1]], [0, 0]);
-  const maleBlock = mrows.length ? `<div class="subsec"><h3>남성 신규간호사 부서별 사직</h3><p>누적 기준 (왼쪽 기간 조건은 적용되지 않음) · 부서군 조건만 적용</p></div>
+  // 부서군별: 전체 발령 중 남성 비중, 남성·여성 사직율
+  const gAll = {}, gF = {};
+  for (const [k, [p]] of Object.entries(A.dept)){ const g = grpOf(k.split('|')[1]); if (inG(g)) gAll[g] = (gAll[g] || 0) + p; }
+  for (const [k, [p, ds]] of Object.entries(A.gender)){ const [, g, s] = k.split('|'); if (s === '여' && inG(g)){ gF[g] ??= [0, 0]; gF[g][0] += p; gF[g][1] += ds.length; } }
+  const mg = {};
+  for (const [d, [p, r]] of mrows){ const g = grpOf(d); mg[g] ??= [0, 0]; mg[g][0] += p; mg[g][1] += r; }
+  const mgRows = GNAMES.filter(g => mg[g]);
+  const mgMax = Math.max(.01, ...mgRows.map(g => mg[g][1] / mg[g][0]));
+  const maleGroup = mgRows.length ? `<div class="tw"><table class="mt mgt"><thead><tr><th>부서군</th><th class="num">전체 발령</th><th class="num">남성 발령</th><th class="num">남성 비중</th><th class="num">남성 사직</th><th>남성 사직율</th><th class="num">여성 사직율</th></tr></thead><tbody>
+      ${mgRows.map(g => { const [p, r] = mg[g], f = gF[g] || [0, 0], mr = r / p, fr = f[0] ? f[1] / f[0] : NaN;
+        return `<tr><td><b>${g}</b></td><td class="num">${gAll[g] || 0}명</td><td class="num">${p}명</td><td class="num">${pct(p / Math.max(1, gAll[g] || 0), 0)}</td><td class="num">${r ? `<b class="rdx">${r}명</b>` : '0명'}</td>
+          <td class="bcell"><span class="mb2"><i style="width:${mr / mgMax * 100}%"></i></span><b>${pct(mr, 0)}</b>${isFinite(fr) && mr - fr >= .1 ? ' <span class="dl up">여성보다 ▲</span>' : ''}</td><td class="num">${pct(fr, 0)}</td></tr>`; }).join('')}
+    </tbody><tfoot><tr><td>합계</td><td class="num">${Object.values(gAll).reduce((s, v) => s + v, 0)}명</td><td class="num">${mT[0]}명</td><td class="num">${pct(mT[0] / Math.max(1, Object.values(gAll).reduce((s, v) => s + v, 0)), 0)}</td><td class="num">${mT[1]}명</td><td><b>${pct(mT[1] / Math.max(1, mT[0]), 0)}</b></td><td class="num">${(() => { const f = Object.values(gF).reduce((s, v) => [s[0] + v[0], s[1] + v[1]], [0, 0]); return pct(f[0] ? f[1] / f[0] : NaN, 0); })()}</td></tr></tfoot></table></div>` : '';
+  const maleBlock = mrows.length ? `<div class="subsec"><h3>남성 신규간호사 부서군별 사직</h3><p>누적 기준 (왼쪽 기간 조건은 적용되지 않음) · 남성 비중 = 부서군 전체 발령 중 남성 비율</p></div>${maleGroup}
+    <div class="subsec"><h3>남성 신규간호사 부서별 사직</h3><p>누적 기준 · 부서군 조건만 적용</p></div>
     <div class="tw mtbl"><table class="mt"><thead><tr><th>부서</th><th>부서군</th><th class="num">남성 발령</th><th class="num">사직</th><th class="num">사직율</th></tr></thead><tbody>
       ${mrows.map(([d, [p, r]]) => `<tr${r ? ' class="top"' : ''}><td><b>${d}</b></td><td><span class="tag">${grpOf(d)}</span></td><td class="num">${p}명</td><td class="num">${r ? `<b class="rdx">${r}명</b>` : '0명'}</td><td class="num">${pct(r / p, 0)}</td></tr>`).join('')}
     </tbody><tfoot><tr><td>합계</td><td>${mrows.length}개 부서</td><td class="num">${mT[0]}명</td><td class="num">${mT[1]}명</td><td class="num">${pct(mT[1] / Math.max(1, mT[0]))}</td></tr></tfoot></table></div>` : '';
