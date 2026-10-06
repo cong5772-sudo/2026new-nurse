@@ -268,6 +268,9 @@ b.rd{color:var(--crit-ink)}
 .mt th,.mt td{padding:7px 10px;font-size:12.5px}
 .mt tr.top td{background:color-mix(in oklab,var(--s2) 10%,transparent)}
 .mt tr.zrow td{color:var(--muted)}
+.gtab td .sh,.gtab tfoot .sh{display:block;font-size:11px;font-weight:400;color:var(--muted);line-height:1.2}
+.gtab td.heat.hi .sh{color:rgba(255,255,255,.8)}
+.ct .rdx{color:var(--crit-ink);font-weight:600}
 .calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end}
 .calc label{display:grid;gap:4px;font-size:12px;color:var(--ink2)}
 .calc input{border:1px solid var(--line2);background:var(--surface);border-radius:8px;padding:8px 10px;font-family:var(--f-num);font-size:16px;width:100%}
@@ -487,6 +490,21 @@ function p1(){
   const t = totals(), bc = byCohort(), ds = depts();
   const sel = COH.filter(inC), latest = COH.at(-1);
   const groups = GNAMES.filter(inG).map(g => ({ g, p: ds.filter(d => d.g === g).reduce((s, d) => s + d.p, 0) }));
+  // 회차별 발령인원 표
+  const bcs = bc.filter(b => inC(b.c));
+  const cohTable = `<div class="tw"><table class="gt ct"><thead><tr><th>회차</th><th class="num">발령일</th><th class="num">발령인원</th><th class="num">비중</th><th class="num">재직</th><th class="num">사직</th><th class="num">경과</th></tr></thead><tbody>
+    ${bcs.map(b => `<tr><td><b>${cLab(b.c)}</b></td><td class="num">${b.c.replaceAll('-', '.')}</td><td class="num"><b>${b.p}명</b></td><td class="num">${pct(b.p / Math.max(1, t.p))}</td><td class="num">${b.p - b.r}명</td><td class="num">${b.r ? `<span class="rdx">${b.r}명</span>` : '0명'}</td><td class="num zero">D+${days(new Date(b.c + 'T00:00:00'), TODAY)}</td></tr>`).join('')}
+    </tbody><tfoot><tr><td>합계</td><td class="num">${bcs.length}개 회차</td><td class="num">${t.p}명</td><td class="num">100%</td><td class="num">${t.p - t.r}명</td><td class="num">${t.r}명</td><td></td></tr></tfoot></table></div>`;
+  // 회차 × 부서군 배치 표
+  const gcols = GNAMES.filter(inG);
+  const gp = (c, g) => Object.entries(A.dept).reduce((s, [k, [p]]) => { const [cc, d] = k.split('|'); return cc === c && grpOf(d) === g ? s + p : s; }, 0);
+  const gm = bcs.map(b => ({ c: b.c, v: gcols.map(g => gp(b.c, g)) }));
+  const gmax = Math.max(1, ...gm.flatMap(r => r.v));
+  const gtot = gcols.map((g, i) => gm.reduce((s, r) => s + r.v[i], 0));
+  const gcell = (v, rowTot) => v ? `<td class="num heat ${v / gmax > .65 ? 'hi' : ''}" style="--p:${Math.round(v / gmax * 60)}%">${v}명<small class="sh">${pct(v / Math.max(1, rowTot), 0)}</small></td>` : `<td class="num zero">0명</td>`;
+  const grpTable = `<div class="tw"><table class="gt gtab"><thead><tr><th>회차</th>${gcols.map(g => `<th class="num">${g}</th>`).join('')}<th class="num">합계</th></tr></thead><tbody>
+    ${gm.map(r => { const rt = r.v.reduce((s, x) => s + x, 0); return `<tr><td><b>${cLab(r.c)}</b> <span class="zero">${cShort(r.c)}</span></td>${r.v.map(v => gcell(v, rt)).join('')}<td class="num"><b>${rt}명</b></td></tr>`; }).join('')}
+    </tbody><tfoot><tr><td>합계</td>${gtot.map(v => `<td class="num">${v}명<small class="sh">${pct(v / Math.max(1, t.p), 0)}</small></td>`).join('')}<td class="num">${t.p}명</td></tr></tfoot></table></div>`;
   const tl = bc.map(b => {
     const dd = days(new Date(b.c + 'T00:00:00'), TODAY);
     return `<div class="tli ${inC(b.c) ? '' : 'dim'}" data-tip="${cLab(b.c)} ${b.c}\n발령 ${b.p}명 · 사직 ${b.r}명 · 재직 ${b.p-b.r}명">
@@ -530,10 +548,12 @@ function p1(){
   <div class="grid">
     <section class="panel w12"><div class="ph"><div><h2>발령 회차 정보</h2><p>막대: 재직(파랑) · 사직(빨강) 비율, D+는 기준일까지 경과일</p></div></div><div class="tl">${tl}</div></section>
     <section class="panel w7"><div class="ph"><div><h2>발령일자별 총 발령인원</h2><p>단위: 명</p></div></div>
-      ${vbars(bc.filter(b => inC(b.c)).map(b => ({ label: cLab(b.c), sub: b.c.replaceAll('-', '.'), v: b.p, tip: `${cLab(b.c)} ${b.c}\n발령 ${b.p}명` })))}</section>
+      ${vbars(bc.filter(b => inC(b.c)).map(b => ({ label: cLab(b.c), sub: b.c.replaceAll('-', '.'), v: b.p, tip: `${cLab(b.c)} ${b.c}\n발령 ${b.p}명` })), { h: 170 })}
+      ${cohTable}</section>
     <section class="panel w5"><div class="ph"><div><h2>부서군별 배치</h2><p>선택한 회차 기준 발령인원</p></div></div>
       ${hbars(groups.map(x => ({ label: x.g, v: x.p, vl: x.p + '명', tip: `${x.g} 발령 ${x.p}명 (${pct(x.p / t.p)})` })))}
       <div class="note">${GROUPS.map(([g, l]) => `${g} ${l.length}`).join(' · ')}개 부서로 구분합니다.</div></section>
+    <section class="panel w12"><div class="ph"><div><h2>회차별 부서군 배치현황</h2><p>각 칸: 배치 인원 · 작은 글씨는 해당 회차 안에서의 비중 · 진할수록 많음</p></div></div>${grpTable}</section>
     <section class="panel w12"><div class="ph"><div><h2>발령일자별 세부부서 발령현황</h2><p>일반병동 · 통합병동 · 중환자 · 수술회복 · 응급 구분별 발령일자별 발령인원 및 누적 발령인원</p></div>
       <div class="tools"><input class="search" id="q" type="search" placeholder="부서 검색 (예: 8A, 중환자)" value="${esc(S.q)}" aria-label="부서 검색"></div></div>${tbar}${table}</section>
   </div></div>`;
