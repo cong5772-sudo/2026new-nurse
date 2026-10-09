@@ -380,6 +380,9 @@ body{background:var(--bg)}
   .app{grid-template-columns:minmax(0,1fr);padding-top:14px;gap:14px}
   .side{position:static;max-height:none;overflow:visible}
   .sscroll{overflow:visible;display:contents}
+  /* 모바일: 파란 메뉴 박스를 상단 바 아래에 고정 */
+  .side{display:contents}
+  .side .navcard{position:sticky;top:var(--tbh,56px);z-index:22;box-shadow:0 6px 14px rgba(31,58,104,.28)}
   .navcard{padding:6px}
   .navcard .navlist{grid-template-columns:repeat(3,1fr);width:auto}
   .navcard .navbtn{flex-direction:column;gap:2px;padding:8px 4px;font-size:12.5px;text-align:center;justify-content:center}
