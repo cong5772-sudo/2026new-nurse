@@ -78,7 +78,7 @@ function readResigned_() {
   const cohorts = Object.keys(starts).sort();
   list.forEach(x => { x.cohort = (cohorts.indexOf(x.start) + 1) + '차'; });
   list.sort((a, b) => (a.end < b.end ? 1 : a.end > b.end ? -1 : a.dept.localeCompare(b.dept)));
-  return { rows: list, generated: Utilities.formatDate(new Date(), ADMIN.TZ, 'yyyy-MM-dd HH:mm'), groups: ADMIN.GROUPS.map(g => g[0]) };
+  return { rows: list, generated: Utilities.formatDate(new Date(), ADMIN.TZ, 'yyyy-MM-dd HH:mm'), groups: ADMIN.GROUPS };
 }
 
 function page_(data, err, month, who) {
@@ -126,27 +126,37 @@ if (P.err || !P.data) {
   document.getElementById('gen').textContent = '조회 ' + P.data.generated;
   const rows = P.data.rows;
   const months = [...new Set(rows.map(r => r.end.slice(0, 7)))].sort().reverse();
-  const S = { m: months.includes(P.month) ? P.month : 'all', g: 'all', q: '' };
+  const S = { m: months.includes(P.month) ? P.month : 'all', g: 'all', d: 'all', q: '' };
+  const GN = P.data.groups.map(g => g[0]);
+  const extra = [...new Set(rows.filter(r => r.group === '기타').map(r => r.dept))].sort();
+  if (extra.length) { GN.push('기타'); P.data.groups.push(['기타', extra]); }
+  const deptsOf = g => g === 'all' ? P.data.groups.reduce((a, x) => a.concat(x[1]), []) : (P.data.groups.find(x => x[0] === g) || ['', []])[1];
   const ml = m => m.slice(0, 4) + '년 ' + (+m.slice(5)) + '월';
   const sl = s => (+s.slice(5, 7)) + '월 ' + (+s.slice(8)) + '일';
   function draw() {
     const q = S.q.trim().toLowerCase();
-    const list = rows.filter(r => (S.m === 'all' || r.end.slice(0, 7) === S.m) && (S.g === 'all' || r.group === S.g) && (!q || (r.name + r.dept + r.reason).toLowerCase().includes(q)));
+    const list = rows.filter(r => (S.m === 'all' || r.end.slice(0, 7) === S.m) && (S.g === 'all' || r.group === S.g) && (S.d === 'all' || r.dept === S.d) && (!q || (r.name + r.dept + r.reason).toLowerCase().includes(q)));
+    // 세부부서 목록 옆 인원: 사직월·부서군·검색 조건을 적용한 부서별 사직자 수
+    const baseCnt = {}; rows.filter(r => (S.m === 'all' || r.end.slice(0, 7) === S.m) && (!q || (r.name + r.dept + r.reason).toLowerCase().includes(q))).forEach(r => { baseCnt[r.dept] = (baseCnt[r.dept] || 0) + 1; });
     const by = {}; list.forEach(r => { (by[r.end.slice(0, 7)] = by[r.end.slice(0, 7)] || []).push(r); });
     const avg = list.length ? Math.round(list.reduce((s, r) => s + r.days, 0) / list.length) : 0;
     const early = list.filter(r => r.days <= 92).length;
     app.innerHTML = '<div class="card filters">'
       + '<div><span class="fl">사직월</span><span class="chips">' + ['all'].concat(months).map(m => '<button class="chip" data-m="' + m + '" aria-pressed="' + (S.m === m) + '">' + (m === 'all' ? '전체' : ml(m)) + '</button>').join('') + '</span></div>'
-      + '<div><span class="fl">부서군</span><select id="g"><option value="all">전체</option>' + P.data.groups.map(g => '<option ' + (S.g === g ? 'selected' : '') + '>' + g + '</option>').join('') + '</select></div>'
+      + '<div><span class="fl">부서군</span><span class="chips">' + ['all'].concat(GN).map(g => '<button class="chip" data-g="' + g + '" aria-pressed="' + (S.g === g) + '">' + (g === 'all' ? '전체' : g) + '</button>').join('') + '</span></div>'
+      + '<div><span class="fl">세부부서</span><select id="d"><option value="all">전체' + (S.g === 'all' ? '' : ' (' + S.g + ')') + '</option>' + deptsOf(S.g).map(d => { const n = baseCnt[d] || 0; return '<option value="' + esc(d) + '"' + (S.d === d ? ' selected' : '') + '>' + esc(d) + ' (' + n + '명)</option>'; }).join('') + '</select></div>'
       + '<div><span class="fl">검색</span><input id="q" placeholder="이름·부서·사유" value="' + esc(S.q) + '"></div></div>'
-      + '<div class="card sum"><span>사직자 <b>' + list.length + '</b>명</span><span>입사 3개월 이내 <b>' + early + '</b>명</span><span>평균 근속 <b>' + avg + '</b>일</span><span class="muted">' + (S.m === 'all' ? '전체 기간' : ml(S.m)) + (S.g === 'all' ? '' : ' · ' + S.g) + '</span></div>'
+      + '<div class="card sum"><span>사직자 <b>' + list.length + '</b>명</span><span>입사 3개월 이내 <b>' + early + '</b>명</span><span>평균 근속 <b>' + avg + '</b>일</span><span class="muted">' + (S.m === 'all' ? '전체 기간' : ml(S.m)) + (S.g === 'all' ? '' : ' · ' + S.g) + (S.d === 'all' ? '' : ' · ' + esc(S.d)) + '</span></div>'
       + '<div class="card tw">' + (list.length ? '<table><thead><tr><th>사직일</th><th class="l">부서</th><th>부서군</th><th class="l">성명</th><th>성별</th><th>발령</th><th>근속</th><th>사직 시기</th><th class="l">사직 사유</th></tr></thead><tbody>'
       + Object.keys(by).sort().reverse().map(m => '<tr class="mh"><td colspan="9">' + ml(m) + ' · ' + by[m].length + '명</td></tr>' + by[m].map(r =>
           '<tr><td>' + sl(r.end) + '</td><td class="l"><b>' + esc(r.dept) + '</b></td><td>' + esc(r.group) + '</td><td class="l"><b>' + esc(r.name) + '</b></td><td>' + esc(r.gender) + '</td><td>' + esc(r.cohort) + ' <span class="muted">(' + sl(r.start) + ')</span></td><td>' + r.days + '일</td><td>' + esc(r.period) + '</td><td class="l">' + esc(r.reason) + '</td></tr>').join('')).join('')
       + '</tbody></table>' : '<div class="empty">조건에 맞는 사직자가 없습니다.</div>') + '</div>';
   }
-  app.addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (b) { S.m = b.dataset.m; draw(); } });
-  app.addEventListener('change', e => { if (e.target.id === 'g') { S.g = e.target.value; draw(); } });
+  app.addEventListener('click', e => {
+    const b = e.target.closest('[data-m]'); if (b) { S.m = b.dataset.m; draw(); return; }
+    const g = e.target.closest('[data-g]'); if (g) { S.g = g.dataset.g; if (S.d !== 'all' && !deptsOf(S.g).includes(S.d)) S.d = 'all'; draw(); }
+  });
+  app.addEventListener('change', e => { if (e.target.id === 'd') { S.d = e.target.value; draw(); } });
   app.addEventListener('input', e => { if (e.target.id === 'q') { S.q = e.target.value; const p = e.target.selectionStart; draw(); const i = document.getElementById('q'); i.focus(); i.setSelectionRange(p, p); } });
   draw();
 }
