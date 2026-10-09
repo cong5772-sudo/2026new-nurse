@@ -26,6 +26,7 @@ const ADMIN = {
 };
 
 function doGet(e) {
+  ScriptApp.requireScopes(ScriptApp.AuthMode.FULL, ['https://www.googleapis.com/auth/spreadsheets']); // 시트 권한이 없으면 승인 화면 표시
   let data = null, err = '';
   try {
     data = readResigned_();
