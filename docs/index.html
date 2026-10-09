@@ -44,7 +44,7 @@ body{margin:0}[hidden]{display:none!important}img{max-width:100%}
   --good-ink:#2fc22f; --crit-ink:#ef7a7a;
 }
 *{box-sizing:border-box}
-html,body{height:100%}
+html{height:100%}body{min-height:100%}
 /* 넓은 화면에서는 브라우저 150% 확대와 같은 크기로 보이게 (휴대폰·좁은 창·인쇄는 그대로) */
 :root{--z:1}
 @media (min-width:1300px){:root{--z:1.25}html{zoom:1.25}}
@@ -312,7 +312,13 @@ body{background:var(--bg)}
 .refresh:hover{border-color:var(--accent);color:var(--accent)}
 
 .app{display:grid;grid-template-columns:264px minmax(0,1fr);gap:24px;align-items:start;padding:24px clamp(16px,2vw,28px) 48px;max-width:none;margin:0}
-.side{position:sticky;top:76px;display:grid;gap:14px;align-content:start;max-height:calc(100vh / var(--z) - 92px);overflow:auto;padding-bottom:4px}
+.side{position:sticky;top:calc(var(--tbh,64px) + 12px);display:flex;flex-direction:column;gap:14px;max-height:calc(100vh / var(--z) - var(--tbh,64px) - 24px);overflow:hidden}
+.side .navcard{flex:none}
+.sscroll{flex:1 1 auto;min-height:0;overflow:auto;display:grid;gap:14px;align-content:start;padding-bottom:4px;scrollbar-width:thin}
+/* 페이지 제목: 스크롤해도 상단에 고정 */
+@media (min-width:821px){
+  .head{position:sticky;top:var(--tbh,64px);z-index:20;background:var(--bg);margin:-24px 0 -8px;padding:20px 0 12px;box-shadow:0 10px 12px -12px rgba(15,28,30,.25)}
+}
 .navcard{background:linear-gradient(160deg,var(--navy2),var(--navy));border-radius:16px;padding:10px;box-shadow:0 6px 18px rgba(31,58,104,.22)}
 .navcard .navlist{display:grid;gap:4px}
 .navcard .navbtn{display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;border:0;border-radius:10px;background:none;color:rgba(255,255,255,.82);font-weight:600;font-size:14.5px;text-align:left;cursor:pointer}
@@ -373,6 +379,7 @@ body{background:var(--bg)}
   .org,.tb-r .pill:nth-of-type(2){display:none}
   .app{grid-template-columns:minmax(0,1fr);padding-top:14px;gap:14px}
   .side{position:static;max-height:none;overflow:visible}
+  .sscroll{overflow:visible;display:contents}
   .navcard{padding:6px}
   .navcard .navlist{grid-template-columns:repeat(3,1fr);width:auto}
   .navcard .navbtn{flex-direction:column;gap:2px;padding:8px 4px;font-size:12.5px;text-align:center;justify-content:center}
@@ -596,6 +603,7 @@ svg text{font-family:var(--f-ui)}
       <a class="navadmin" id="nav-admin" href="#" target="_blank" rel="noopener" hidden title="원본 시트 접근 권한이 있는 구글 계정만 열 수 있습니다"><span class="ic" aria-hidden="true">🔒</span><span class="nl">사직자 명단</span><small>관리자 ↗</small></a>
       <script>addEventListener('DOMContentLoaded',function(){var u=(window.DASH_CONFIG||{}).ADMIN_URL,a=document.getElementById('nav-admin');if(u&&a){a.href=u;a.hidden=false;}});</script>
     </nav>
+    <div class="sscroll">
     <details class="fcard" id="fcard" open>
       <summary>조회 조건 <span id="f-sum"></span></summary>
       <div id="f-side"></div>
@@ -604,6 +612,7 @@ svg text{font-family:var(--f-ui)}
       <span>데이터 원본 <b id="src">–</b></span>
       <span>사직정보 자동 갱신 <b>매일 17:00</b></span>
       <span>관리 목표 사직율 <b>20% 이하</b></span>
+    </div>
     </div>
   </aside>
 
@@ -1370,6 +1379,8 @@ document.addEventListener('input', e => {
   if (e.target.id === 'c-need'){ S.need = e.target.value; calc(); }
   if (e.target.id === 'c-rate'){ S.erate = e.target.value; calc(); }
 });
+const setTbh = () => { const tb = document.querySelector('.topbar'); if (tb) document.documentElement.style.setProperty('--tbh', tb.offsetHeight + 'px'); };
+setTbh(); addEventListener('resize', setTbh);
 const tip = document.getElementById('tip');
 document.addEventListener('pointermove', e => {
   const t = e.target.closest?.('[data-tip]');
