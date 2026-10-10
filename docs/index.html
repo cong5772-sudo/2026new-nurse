@@ -613,9 +613,9 @@ svg text{font-family:var(--f-ui)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 /* ===== 표 행 색 구분 (그룹 머리행 · 소계 · 합계) + 바탕 중립화 ===== */
 :root{
-  --row-hd:#2f4a78; --row-hd-ink:#ffffff; --row-hd-line:#3f5b8a; --row-hover:#f6f7f9;
+  --row-hd:#e9eef5; --row-hd-ink:#1f3a68; --row-hd-line:#cdd7e6; --row-hover:#f6f7f9;
   --row-gh:#f3ece0; --row-gh-ink:#7a541a; --row-gh-bar:#c9974a;
-  --row-sub:#fbf8f3; --row-tot:#dfe7f3; --row-tot-ink:#1f3a68; --row-tot-bar:#2f4a78;
+  --row-sub:#fbf8f3; --row-tot:#e9eef5; --row-tot-ink:#1f3a68; --row-tot-bar:#8ea3c4;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -631,11 +631,11 @@ svg text{font-family:var(--f-ui)}
 }
 /* 표 머리행(열 제목)·합계행: 남색 계열로 통일 */
 thead th,thead th:first-child,.gt thead th:first-child,.dt .band th,.dt2 .band th,.dt th.prevband,.dt .band th.prevband{background:var(--row-hd);color:var(--row-hd-ink);border-bottom:1px solid var(--row-hd-line)}
-thead th .ar,thead th .d,thead th small{color:rgba(255,255,255,.75)}
-thead th.sort:hover{color:#fff;text-decoration:underline}
-.gt thead th.coh{color:#cfe0ff}
-thead th .d,thead th .zero,.dt2 thead th .d{color:rgba(255,255,255,.72)}
-.dt2 thead th.y6h{color:#fff}
+thead th .ar,thead th .d,thead th small{color:#6b7a93}
+thead th.sort:hover{color:var(--accent);text-decoration:underline}
+.gt thead th.coh{color:var(--accent)}
+thead th .d,thead th .zero,.dt2 thead th .d{color:#6b7a93}
+.dt2 thead th.y6h{color:var(--row-hd-ink)}
 tbody tr:hover td{background:var(--row-hover)}
 tfoot td,.gt tfoot td,.gt tfoot td:first-child{background:var(--row-tot);color:var(--row-tot-ink);font-weight:700;border-top:2px solid var(--row-tot-bar)}
 .gt tr.gh td,.gt tr.gh td:first-child,tr.gh td{background:var(--row-gh);color:var(--row-gh-ink);font-weight:700;box-shadow:inset 3px 0 0 var(--row-gh-bar)}
