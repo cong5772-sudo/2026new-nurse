@@ -145,56 +145,61 @@ function page_(data, err, month, who, self) {
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${ADMIN.TITLE}</title>
 <style>
 ${adminCss_()}
-.vt{display:flex;gap:4px;background:#eef2f8;border-radius:10px;padding:3px}.vt a{padding:6px 14px;border-radius:8px;color:var(--ink2);text-decoration:none;font-weight:600;font-size:13px}.vt a.on{background:#fff;color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.08)}
-</style></head><body>
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head><body>
 <header><h1><i>+</i>${ADMIN.TITLE} <span class="tag">관리자 전용 · 외부 공유 금지</span></h1>${viewTabs_(self, 'resign')}
-<div class="hr"><a class="btn home" id="dash" target="_top">← 메인 대시보드</a><span id="who"></span><span id="gen"></span><button class="btn" onclick="window.print()">인쇄 · PDF</button></div></header>
+<div class="hr"><a class="btn home" id="dash" target="_top">← 메인 대시보드</a><span id="who"></span><span id="gen"></span></div></header>
 <main id="app"></main>
 <script>
 const P = ${json};
-const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
-document.getElementById('dash').href = P.dash;
-document.getElementById('who').textContent = P.who ? '접속 계정: ' + P.who : '';
-const app = document.getElementById('app');
+${tableKit_()}
 if (P.err || !P.data) {
-  app.innerHTML = '<div class="card err"><b>명단을 볼 수 없습니다.</b><p>이 페이지는 원본 구글 시트(신규간호사 명단)에 접근 권한이 있는 계정으로만 열 수 있습니다.' + (P.who ? ' 현재 계정: <b>' + esc(P.who) + '</b>' : '') + '</p><p class="muted">' + esc(P.err) + '</p></div>';
+  showErr();
 } else {
   document.getElementById('gen').textContent = '조회 ' + P.data.generated;
   const rows = P.data.rows;
   const months = [...new Set(rows.map(r => r.end.slice(0, 7)))].sort().reverse();
   const S = { m: months.includes(P.month) ? P.month : 'all', g: 'all', d: 'all', q: '' };
-  const GN = P.data.groups.map(g => g[0]);
-  const extra = [...new Set(rows.filter(r => r.group === '기타').map(r => r.dept))].sort();
-  if (extra.length) { GN.push('기타'); P.data.groups.push(['기타', extra]); }
-  const deptsOf = g => g === 'all' ? P.data.groups.reduce((a, x) => a.concat(x[1]), []) : (P.data.groups.find(x => x[0] === g) || ['', []])[1];
+  const G = groupsOf(rows);
   const ml = m => m.slice(0, 4) + '년 ' + (+m.slice(5)) + '월';
-  const sl = s => (+s.slice(5, 7)) + '월 ' + (+s.slice(8)) + '일';
-  function draw() {
+  const C = [
+    { h: '사직일', v: r => dot(r.end) },
+    { h: '부서', v: r => r.dept, l: 1, b: 1 },
+    { h: '부서군', v: r => r.group },
+    { h: '성명', v: r => r.name, l: 1, b: 1 },
+    { h: '성별', v: r => r.gender },
+    { h: '발령 회차', v: r => r.cohort },
+    { h: '발령일', v: r => dot(r.start) },
+    { h: '근속(일)', v: r => String(r.days), x: r => r.days },
+    { h: '사직 시기', v: r => r.period },
+    { h: '사직 사유', v: r => r.reason, l: 1 },
+  ];
+  KIT.title = '신규간호사_사직자명단';
+  KIT.draw = function () {
     const q = S.q.trim().toLowerCase();
-    const list = rows.filter(r => (S.m === 'all' || r.end.slice(0, 7) === S.m) && (S.g === 'all' || r.group === S.g) && (S.d === 'all' || r.dept === S.d) && (!q || (r.name + r.dept + r.reason).toLowerCase().includes(q)));
-    // 세부부서 목록 옆 인원: 사직월·부서군·검색 조건을 적용한 부서별 사직자 수
-    const baseCnt = {}; rows.filter(r => (S.m === 'all' || r.end.slice(0, 7) === S.m) && (!q || (r.name + r.dept + r.reason).toLowerCase().includes(q))).forEach(r => { baseCnt[r.dept] = (baseCnt[r.dept] || 0) + 1; });
+    const hit = r => !q || (r.name + r.dept + r.reason).toLowerCase().includes(q);
+    const pre = rows.filter(r => (S.m === 'all' || r.end.slice(0, 7) === S.m) && (S.g === 'all' || r.group === S.g) && (S.d === 'all' || r.dept === S.d) && hit(r));
+    const list = KIT.prep(C, pre);
+    const cnt = {}; rows.filter(r => (S.m === 'all' || r.end.slice(0, 7) === S.m) && hit(r)).forEach(r => { cnt[r.dept] = (cnt[r.dept] || 0) + 1; });
     const by = {}; list.forEach(r => { (by[r.end.slice(0, 7)] = by[r.end.slice(0, 7)] || []).push(r); });
     const avg = list.length ? Math.round(list.reduce((s, r) => s + r.days, 0) / list.length) : 0;
     const early = list.filter(r => r.days <= 92).length;
+    KIT.cond = (S.m === 'all' ? '전체 기간' : ml(S.m)) + (S.g === 'all' ? '' : ' · ' + S.g) + (S.d === 'all' ? '' : ' · ' + S.d) + KIT.cfLabel(C);
     app.innerHTML = '<div class="card filters">'
-      + '<div><span class="fl">사직월</span><span class="chips">' + ['all'].concat(months).map(m => '<button class="chip" data-m="' + m + '" aria-pressed="' + (S.m === m) + '">' + (m === 'all' ? '전체' : ml(m)) + '</button>').join('') + '</span></div>'
-      + '<div><span class="fl">부서군</span><span class="chips">' + ['all'].concat(GN).map(g => '<button class="chip" data-g="' + g + '" aria-pressed="' + (S.g === g) + '">' + (g === 'all' ? '전체' : g) + '</button>').join('') + '</span></div>'
-      + '<div><span class="fl">세부부서</span><select id="d"><option value="all">전체' + (S.g === 'all' ? '' : ' (' + S.g + ')') + '</option>' + deptsOf(S.g).map(d => { const n = baseCnt[d] || 0; return '<option value="' + esc(d) + '"' + (S.d === d ? ' selected' : '') + '>' + esc(d) + ' (' + n + '명)</option>'; }).join('') + '</select></div>'
+      + '<div><span class="fl">사직월</span>' + chips(S, 'm', months, ml) + '</div>'
+      + '<div><span class="fl">부서군</span>' + chips(S, 'g', G.names, v => v) + '</div>'
+      + '<div><span class="fl">세부부서</span>' + deptSelect(S, G, cnt) + '</div>'
       + '<div><span class="fl">검색</span><input id="q" placeholder="이름·부서·사유" value="' + esc(S.q) + '"></div></div>'
-      + '<div class="card sum"><span>사직자 <b>' + list.length + '</b>명</span><span>입사 3개월 이내 <b>' + early + '</b>명</span><span>평균 근속 <b>' + avg + '</b>일</span><span class="muted">' + (S.m === 'all' ? '전체 기간' : ml(S.m)) + (S.g === 'all' ? '' : ' · ' + S.g) + (S.d === 'all' ? '' : ' · ' + esc(S.d)) + '</span></div>'
-      + '<div class="card tw">' + (list.length ? '<table><thead><tr><th>사직일</th><th class="l">부서</th><th>부서군</th><th class="l">성명</th><th>성별</th><th>발령</th><th>근속</th><th>사직 시기</th><th class="l">사직 사유</th></tr></thead><tbody>'
-      + Object.keys(by).sort().reverse().map(m => '<tr class="mh"><td colspan="9">' + ml(m) + ' · ' + by[m].length + '명</td></tr>' + by[m].map(r =>
-          '<tr><td>' + sl(r.end) + '</td><td class="l"><b>' + esc(r.dept) + '</b></td><td>' + esc(r.group) + '</td><td class="l"><b>' + esc(r.name) + '</b></td><td>' + esc(r.gender) + '</td><td>' + esc(r.cohort) + ' <span class="muted">(' + sl(r.start) + ')</span></td><td>' + r.days + '일</td><td>' + esc(r.period) + '</td><td class="l">' + esc(r.reason) + '</td></tr>').join('')).join('')
-      + '</tbody></table>' : '<div class="empty">조건에 맞는 사직자가 없습니다.</div>') + '</div>';
-  }
-  app.addEventListener('click', e => {
-    const b = e.target.closest('[data-m]'); if (b) { S.m = b.dataset.m; draw(); return; }
-    const g = e.target.closest('[data-g]'); if (g) { S.g = g.dataset.g; if (S.d !== 'all' && !deptsOf(S.g).includes(S.d)) S.d = 'all'; draw(); }
-  });
-  app.addEventListener('change', e => { if (e.target.id === 'd') { S.d = e.target.value; draw(); } });
-  app.addEventListener('input', e => { if (e.target.id === 'q') { S.q = e.target.value; const p = e.target.selectionStart; draw(); const i = document.getElementById('q'); i.focus(); i.setSelectionRange(p, p); } });
-  draw();
+      + '<div class="card sum"><span>사직자 <b>' + list.length + '</b>명</span><span>입사 3개월 이내 <b>' + early + '</b>명</span><span>평균 근속 <b>' + avg + '</b>일</span><span class="muted">' + esc(KIT.cond) + '</span></div>'
+      + '<div class="card tw">' + KIT.toolbar(list.length)
+      + KIT.table(C, list, Object.keys(by).sort().reverse().map(m => ({ label: ml(m) + ' · ' + by[m].length + '명', rows: by[m] })), '조건에 맞는 사직자가 없습니다.') + '</div>';
+    KIT.list = list; KIT.cols = C;
+  };
+  KIT.onChip = (k, v) => { S[k] = v; if (k === 'g' && S.d !== 'all' && !G.deptsOf(S.g).includes(S.d)) S.d = 'all'; };
+  KIT.onDept = v => { S.d = v; };
+  KIT.onSearch = v => { S.q = v; };
+  KIT.start();
 }
 </script></body></html>`;
 }
@@ -226,6 +231,17 @@ tr.mh td{background:var(--soft);color:var(--navy);font-weight:700;text-align:lef
 td b{font-weight:700}.muted{color:var(--muted)}.tw{overflow-x:auto}
 .empty{padding:24px;text-align:center;color:var(--muted)}
 .err{border-left:4px solid var(--crit)}
+.vt{display:flex;gap:4px;background:#eef2f8;border-radius:10px;padding:3px}.vt a{padding:6px 14px;border-radius:8px;color:var(--ink2);text-decoration:none;font-weight:600;font-size:13px}.vt a.on{background:#fff;color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.tb{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;font-size:12.5px}
+.tbb{display:flex;gap:6px;flex-wrap:wrap}
+a.btn.sm,button.btn.sm{height:30px;padding:0 12px;font-size:12.5px}
+tr.fr th{background:#fff;padding:4px 5px;border-bottom:1px solid var(--line2)}
+tr.fr select,tr.fr input{height:28px;width:100%;min-width:64px;font-size:12px;padding:0 6px;border-radius:6px}
+tr.fr select.on{border-color:var(--accent);color:var(--accent);font-weight:600}
+th.fon{color:var(--accent)}
+.ptitle{display:none}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}#toast.show{opacity:1}
+@media print{.ptitle{display:block;margin:0 0 6px;font-size:10pt;font-weight:600}.tw{overflow:visible!important}#toast{display:none}}
 @media print{@page{size:A4 portrait;margin:12mm}body{background:#fff}header .hr,.filters,.noprint{display:none!important}.card{border:0;padding:0}main{padding:0}th,td{padding:4px 6px;font-size:9pt;border:.5pt solid #9aa3b2}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 `;
 }
@@ -242,64 +258,184 @@ function placedPage_(data, err, who, self) {
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${ADMIN.PLACED_TITLE}</title>
 <style>
 ${adminCss_()}
-.vt{display:flex;gap:4px;background:#eef2f8;border-radius:10px;padding:3px}.vt a{padding:6px 14px;border-radius:8px;color:var(--ink2);text-decoration:none;font-weight:600;font-size:13px}.vt a.on{background:#fff;color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .st{white-space:nowrap}.st.on{color:#3f7d5a}.st.off{color:#b0645f}
 tr.off td{color:var(--ink2)}
-</style></head><body>
+@media print{@page{size:A4 landscape;margin:10mm}}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head><body>
 <header><h1><i>+</i>${ADMIN.PLACED_TITLE} <span class="tag">관리자 전용 · 외부 공유 금지</span></h1>${viewTabs_(self, 'placed')}
-<div class="hr"><a class="btn home" id="dash" target="_top">← 메인 대시보드</a><span id="who"></span><span id="gen"></span><button class="btn" onclick="window.print()">인쇄 · PDF</button></div></header>
+<div class="hr"><a class="btn home" id="dash" target="_top">← 메인 대시보드</a><span id="who"></span><span id="gen"></span></div></header>
 <main id="app"></main>
 <script>
 const P = ${json};
-const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
-document.getElementById('dash').href = P.dash;
-document.getElementById('who').textContent = P.who ? '접속 계정: ' + P.who : '';
-const app = document.getElementById('app');
+${tableKit_()}
 if (P.err || !P.data) {
-  app.innerHTML = '<div class="card err"><b>명단을 볼 수 없습니다.</b><p>이 페이지는 원본 구글 시트(신규간호사 명단)에 접근 권한이 있는 계정으로만 열 수 있습니다.' + (P.who ? ' 현재 계정: <b>' + esc(P.who) + '</b>' : '') + '</p><p class="muted">' + esc(P.err) + '</p></div>';
+  showErr();
 } else {
   document.getElementById('gen').textContent = '조회 ' + P.data.generated;
   const rows = P.data.rows, cols = P.data.cols, coh = P.data.cohorts;
-  const GN = P.data.groups.map(g => g[0]);
-  const extra = [...new Set(rows.filter(r => r.group === '기타').map(r => r.dept))].sort();
-  if (extra.length) { GN.push('기타'); P.data.groups.push(['기타', extra]); }
-  const deptsOf = g => g === 'all' ? P.data.groups.reduce((a, x) => a.concat(x[1]), []) : (P.data.groups.find(x => x[0] === g) || ['', []])[1];
+  const G = groupsOf(rows);
   const S = { c: 'all', g: 'all', d: 'all', s: 'all', q: '' };
-  const md = s => (+s.slice(5, 7)) + '월 ' + (+s.slice(8)) + '일';
-  const cl = c => (coh.indexOf(c) + 1) + '차 (' + c.slice(0, 4) + '.' + c.slice(5, 7) + '.' + c.slice(8) + ')';
-  const chips = (key, vals, label) => '<span class="chips">' + ['all'].concat(vals).map(v => '<button class="chip" data-' + key + '="' + esc(v) + '" aria-pressed="' + (S[key] === v) + '">' + (v === 'all' ? '전체' : label(v)) + '</button>').join('') + '</span>';
-  function draw() {
+  const cl = c => (coh.indexOf(c) + 1) + '차 (' + dot(c) + ')';
+  const C = [
+    { h: '회차', v: r => r.cohort },
+    { h: '발령일', v: r => dot(r.start) },
+    { h: '부서', v: r => r.dept, l: 1, b: 1 },
+    { h: '부서군', v: r => r.group },
+    { h: '성명', v: r => r.name, l: 1, b: 1 },
+    { h: '성별', v: r => r.gender },
+  ].concat(cols.map((k, j) => ({ h: k, v: r => r.x[j] }))).concat([
+    { h: '상태', v: r => r.end ? '사직' : '재직', html: r => '<span class="st ' + (r.end ? 'off">사직' : 'on">재직') + '</span>' },
+    { h: '사직일', v: r => dot(r.end), html: r => r.end ? '<span class="st off">' + dot(r.end) + '</span>' : '' },
+    { h: '근속(일)', v: r => String(r.days), x: r => r.days },
+    { h: '사직 사유', v: r => r.reason, l: 1 },
+  ]);
+  KIT.title = '신규간호사_발령명단';
+  KIT.rowClass = r => r.end ? 'off' : '';
+  KIT.draw = function () {
     const q = S.q.trim().toLowerCase();
     const hit = r => !q || (r.name + r.dept + r.x.join(' ')).toLowerCase().includes(q);
-    const base = rows.filter(r => (S.c === 'all' || r.start === S.c) && (S.g === 'all' || r.group === S.g) && (S.d === 'all' || r.dept === S.d) && hit(r));
-    const list = base.filter(r => S.s === 'all' || (S.s === 'on' ? !r.end : !!r.end));
+    const pre = rows.filter(r => (S.c === 'all' || r.start === S.c) && (S.g === 'all' || r.group === S.g) && (S.d === 'all' || r.dept === S.d) && (S.s === 'all' || (S.s === 'on' ? !r.end : !!r.end)) && hit(r));
+    const list = KIT.prep(C, pre);
     const cnt = {}; rows.filter(r => (S.c === 'all' || r.start === S.c) && hit(r)).forEach(r => { cnt[r.dept] = (cnt[r.dept] || 0) + 1; });
-    const out = base.filter(r => r.end).length;
+    const out = list.filter(r => r.end).length;
     const by = {}; list.forEach(r => { (by[r.start] = by[r.start] || []).push(r); });
+    KIT.cond = (S.c === 'all' ? '전체 회차' : cl(S.c)) + (S.g === 'all' ? '' : ' · ' + S.g) + (S.d === 'all' ? '' : ' · ' + S.d) + (S.s === 'all' ? '' : ' · ' + (S.s === 'on' ? '재직자' : '사직자')) + KIT.cfLabel(C);
     app.innerHTML = '<div class="card filters">'
-      + '<div><span class="fl">발령 회차</span>' + chips('c', coh.slice().reverse(), cl) + '</div>'
-      + '<div><span class="fl">부서군</span>' + chips('g', GN, v => v) + '</div>'
-      + '<div><span class="fl">세부부서</span><select id="d"><option value="all">전체' + (S.g === 'all' ? '' : ' (' + S.g + ')') + '</option>' + deptsOf(S.g).map(d => '<option value="' + esc(d) + '"' + (S.d === d ? ' selected' : '') + '>' + esc(d) + ' (' + (cnt[d] || 0) + '명)</option>').join('') + '</select></div>'
-      + '<div><span class="fl">상태</span>' + chips('s', ['on', 'off'], v => v === 'on' ? '재직' : '사직') + '</div>'
+      + '<div><span class="fl">발령 회차</span>' + chips(S, 'c', coh.slice().reverse(), cl) + '</div>'
+      + '<div><span class="fl">부서군</span>' + chips(S, 'g', G.names, v => v) + '</div>'
+      + '<div><span class="fl">세부부서</span>' + deptSelect(S, G, cnt) + '</div>'
+      + '<div><span class="fl">상태</span>' + chips(S, 's', ['on', 'off'], v => v === 'on' ? '재직' : '사직') + '</div>'
       + '<div><span class="fl">검색</span><input id="q" placeholder="이름·부서·학교 등" value="' + esc(S.q) + '"></div></div>'
-      + '<div class="card sum"><span>발령 <b>' + base.length + '</b>명</span><span>재직 <b>' + (base.length - out) + '</b>명</span><span>사직 <b>' + out + '</b>명</span><span>사직율 <b>' + (base.length ? (out / base.length * 100).toFixed(1) : '0.0') + '</b>%</span><span class="muted">' + (S.c === 'all' ? '전체 회차' : cl(S.c)) + (S.g === 'all' ? '' : ' · ' + S.g) + (S.d === 'all' ? '' : ' · ' + esc(S.d)) + (S.s === 'all' ? '' : ' · ' + (S.s === 'on' ? '재직자' : '사직자')) + '</span></div>'
-      + '<div class="card tw">' + (list.length ? '<table><thead><tr><th>회차</th><th>발령일</th><th class="l">부서</th><th>부서군</th><th class="l">성명</th><th>성별</th>' + cols.map(k => '<th>' + esc(k) + '</th>').join('') + '<th>상태</th><th>근속</th><th class="l">사직 사유</th></tr></thead><tbody>'
-      + Object.keys(by).sort().reverse().map(s => '<tr class="mh"><td colspan="' + (9 + cols.length) + '">' + cl(s) + ' · ' + by[s].length + '명</td></tr>' + by[s].map(r =>
-          '<tr' + (r.end ? ' class="off"' : '') + '><td>' + esc(r.cohort) + '</td><td>' + md(r.start) + '</td><td class="l"><b>' + esc(r.dept) + '</b></td><td>' + esc(r.group) + '</td><td class="l"><b>' + esc(r.name) + '</b></td><td>' + esc(r.gender) + '</td>'
-          + r.x.map(v => '<td>' + esc(v) + '</td>').join('')
-          + '<td>' + (r.end ? '<span class="st off">' + r.end.replace(/-/g, '.') + ' 사직</span>' : '<span class="st on">재직</span>') + '</td><td>' + r.days + '일</td><td class="l">' + esc(r.reason) + '</td></tr>').join('')).join('')
-      + '</tbody></table>' : '<div class="empty">조건에 맞는 발령자가 없습니다.</div>') + '</div>';
-  }
-  app.addEventListener('click', e => {
-    const b = e.target.closest('[data-c],[data-g],[data-s]'); if (!b) return;
-    if (b.dataset.c) S.c = b.dataset.c;
-    if (b.dataset.s) S.s = b.dataset.s;
-    if (b.dataset.g) { S.g = b.dataset.g; if (S.d !== 'all' && !deptsOf(S.g).includes(S.d)) S.d = 'all'; }
-    draw();
-  });
-  app.addEventListener('change', e => { if (e.target.id === 'd') { S.d = e.target.value; draw(); } });
-  app.addEventListener('input', e => { if (e.target.id === 'q') { S.q = e.target.value; const p = e.target.selectionStart; draw(); const i = document.getElementById('q'); i.focus(); i.setSelectionRange(p, p); } });
-  draw();
+      + '<div class="card sum"><span>발령 <b>' + list.length + '</b>명</span><span>재직 <b>' + (list.length - out) + '</b>명</span><span>사직 <b>' + out + '</b>명</span><span>사직율 <b>' + (list.length ? (out / list.length * 100).toFixed(1) : '0.0') + '</b>%</span><span class="muted">' + esc(KIT.cond) + '</span></div>'
+      + '<div class="card tw">' + KIT.toolbar(list.length)
+      + KIT.table(C, list, Object.keys(by).sort().reverse().map(s => ({ label: cl(s) + ' · ' + by[s].length + '명', rows: by[s] })), '조건에 맞는 발령자가 없습니다.') + '</div>';
+    KIT.list = list; KIT.cols = C;
+  };
+  KIT.onChip = (k, v) => { S[k] = v; if (k === 'g' && S.d !== 'all' && !G.deptsOf(S.g).includes(S.d)) S.d = 'all'; };
+  KIT.onDept = v => { S.d = v; };
+  KIT.onSearch = v => { S.q = v; };
+  KIT.start();
 }
 </script></body></html>`;
+}
+
+// 두 명단 화면이 함께 쓰는 표 기능: 열 필터, 엑셀 다운로드, 인쇄·PDF (브라우저에서 실행되는 코드)
+function tableKit_() {
+  return String.raw`
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const dot = s => s ? s.replace(/-/g, '.') : '';
+const app = document.getElementById('app');
+document.getElementById('dash').href = P.dash;
+document.getElementById('who').textContent = P.who ? '접속 계정: ' + P.who : '';
+function showErr() {
+  app.innerHTML = '<div class="card err"><b>명단을 볼 수 없습니다.</b><p>이 페이지는 원본 구글 시트(신규간호사 명단)에 접근 권한이 있는 계정으로만 열 수 있습니다.' + (P.who ? ' 현재 계정: <b>' + esc(P.who) + '</b>' : '') + '</p><p class="muted">' + esc(P.err) + '</p></div>';
+}
+function groupsOf(rows) {
+  const names = P.data.groups.map(g => g[0]);
+  const extra = [...new Set(rows.filter(r => r.group === '기타').map(r => r.dept))].sort();
+  if (extra.length) { names.push('기타'); P.data.groups.push(['기타', extra]); }
+  return { names: names, deptsOf: g => g === 'all' ? P.data.groups.reduce((a, x) => a.concat(x[1]), []) : (P.data.groups.find(x => x[0] === g) || ['', []])[1] };
+}
+function chips(S, key, vals, label) {
+  return '<span class="chips">' + ['all'].concat(vals).map(v => '<button class="chip" data-k="' + key + '" data-v="' + esc(v) + '" aria-pressed="' + (S[key] === v) + '">' + (v === 'all' ? '전체' : esc(label(v))) + '</button>').join('') + '</span>';
+}
+function deptSelect(S, G, cnt) {
+  return '<select id="d"><option value="all">전체' + (S.g === 'all' ? '' : ' (' + esc(S.g) + ')') + '</option>' + G.deptsOf(S.g).map(d => '<option value="' + esc(d) + '"' + (S.d === d ? ' selected' : '') + '>' + esc(d) + ' (' + (cnt[d] || 0) + '명)</option>').join('') + '</select>';
+}
+const BLANK = '∅';
+const KIT = {
+  cf: {},
+  // 열마다 고를 값 목록을 만들고(필터 전 목록 기준), 열 필터를 적용한 목록을 돌려준다
+  prep(C, pre) {
+    C.forEach(c => {
+      c.vals = [...new Set(pre.map(r => c.v(r)))].sort((a, b) => a.localeCompare(b, 'ko', { numeric: true }));
+      c.many = c.vals.length > 30;
+    });
+    return pre.filter(r => C.every((c, i) => {
+      const f = KIT.cf[i]; if (!f) return true;
+      const v = c.v(r);
+      return c.many ? v.toLowerCase().includes(f.toLowerCase()) : f === BLANK ? v === '' : v === f;
+    }));
+  },
+  cfLabel(C) {
+    const n = Object.keys(KIT.cf).filter(i => KIT.cf[i]).length;
+    return n ? ' · 열 필터 ' + n + '개' : '';
+  },
+  toolbar(n) {
+    const on = Object.keys(KIT.cf).some(i => KIT.cf[i]);
+    return '<div class="tb noprint"><span class="muted">각 열 제목 아래 칸에서 값을 고르면 표를 거를 수 있습니다 · ' + n + '명</span><span class="tbb">'
+      + (on ? '<button class="btn sm" data-act="reset">열 필터 초기화</button>' : '')
+      + '<button class="btn sm" data-act="xlsx">엑셀 다운로드</button><button class="btn sm" data-act="print">인쇄</button><button class="btn sm" data-act="pdf">PDF 저장</button></span></div>'
+      + '<p class="ptitle">' + esc(document.title) + ' · ' + esc(KIT.cond) + ' · ' + n + '명 · 출력 ' + new Date().toLocaleDateString('ko-KR') + '</p>';
+  },
+  table(C, list, groups, empty) {
+    const head = '<tr>' + C.map((c, i) => '<th class="' + (c.l ? 'l' : '') + (KIT.cf[i] ? ' fon' : '') + '">' + esc(c.h) + '</th>').join('') + '</tr>'
+      + '<tr class="fr noprint">' + C.map((c, i) => {
+        const f = KIT.cf[i] || '';
+        return '<th>' + (c.many
+          ? '<input data-cf="' + i + '" placeholder="포함 검색" value="' + esc(f) + '">'
+          : '<select data-cf="' + i + '"' + (f ? ' class="on"' : '') + '><option value="">전체</option>' + c.vals.map(v => { const val = v === '' ? BLANK : v; return '<option value="' + esc(val) + '"' + (val === f ? ' selected' : '') + '>' + esc(v === '' ? '(빈칸)' : v) + '</option>'; }).join('') + '</select>') + '</th>';
+      }).join('') + '</tr>';
+    const cell = (c, r) => { const v = c.html ? c.html(r) : (c.b ? '<b>' + esc(c.v(r)) + '</b>' : esc(c.v(r))); return '<td' + (c.l ? ' class="l"' : '') + '>' + v + '</td>'; };
+    const body = list.length ? groups.map(g => '<tr class="mh"><td colspan="' + C.length + '">' + esc(g.label) + '</td></tr>'
+      + g.rows.map(r => '<tr' + (KIT.rowClass && KIT.rowClass(r) ? ' class="' + KIT.rowClass(r) + '"' : '') + '>' + C.map(c => cell(c, r)).join('') + '</tr>').join('')).join('')
+      : '<tr><td colspan="' + C.length + '" class="empty">' + empty + '</td></tr>';
+    return '<table><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
+  },
+  // 지금 표에 보이는 행·열 그대로 엑셀(.xlsx)로 저장 (라이브러리를 못 불러오면 CSV)
+  xlsx() {
+    const C = KIT.cols, list = KIT.list;
+    const aoa = [C.map(c => c.h)].concat(list.map(r => C.map(c => c.x ? c.x(r) : c.v(r))));
+    const day = new Date(), ymd = day.getFullYear() + String(day.getMonth() + 1).padStart(2, '0') + String(day.getDate()).padStart(2, '0');
+    const name = KIT.title + '_' + ymd;
+    if (window.XLSX) {
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      ws['!autofilter'] = { ref: ws['!ref'] };
+      ws['!cols'] = C.map((c, i) => ({ wch: Math.min(40, Math.max(6, ...aoa.map(r => String(r[i] == null ? '' : r[i]).length * 1.8 + 2))) }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '명단');
+      XLSX.writeFile(wb, name + '.xlsx');
+    } else {
+      const csv = '﻿' + aoa.map(r => r.map(v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+      a.download = name + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+    }
+  },
+  toast(msg) {
+    let t = document.getElementById('toast');
+    if (!t) { t = document.createElement('div'); t.id = 'toast'; document.body.appendChild(t); }
+    t.textContent = msg; t.className = 'show';
+    clearTimeout(KIT.tt); KIT.tt = setTimeout(() => { t.className = ''; }, 4000);
+  },
+  redraw(focus) {
+    const el = focus ? document.querySelector(focus) : null, p = el && el.selectionStart;
+    KIT.draw();
+    if (focus) { const n = document.querySelector(focus); if (n) { n.focus(); if (p != null && n.setSelectionRange) n.setSelectionRange(p, p); } }
+  },
+  start() {
+    app.addEventListener('click', e => {
+      const ch = e.target.closest('[data-k]');
+      if (ch) { KIT.onChip(ch.dataset.k, ch.dataset.v); KIT.cf = {}; KIT.draw(); return; }
+      const b = e.target.closest('[data-act]'); if (!b) return;
+      const act = b.dataset.act;
+      if (act === 'reset') { KIT.cf = {}; KIT.draw(); }
+      else if (act === 'xlsx') KIT.xlsx();
+      else if (act === 'print') window.print();
+      else if (act === 'pdf') { KIT.toast('인쇄 창의 "대상(프린터)"에서 "PDF로 저장"을 고른 뒤 저장을 누르세요.'); setTimeout(() => window.print(), 600); }
+    });
+    app.addEventListener('change', e => {
+      if (e.target.id === 'd') { KIT.onDept(e.target.value); KIT.cf = {}; KIT.draw(); }
+      else if (e.target.matches('select[data-cf]')) { KIT.cf[e.target.dataset.cf] = e.target.value; KIT.draw(); }
+    });
+    app.addEventListener('input', e => {
+      if (e.target.id === 'q') { KIT.onSearch(e.target.value); KIT.redraw('#q'); }
+      else if (e.target.matches('input[data-cf]')) { KIT.cf[e.target.dataset.cf] = e.target.value; KIT.redraw('input[data-cf="' + e.target.dataset.cf + '"]'); }
+    });
+    KIT.draw();
+  },
+};
+`;
 }
