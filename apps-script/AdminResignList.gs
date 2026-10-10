@@ -146,7 +146,6 @@ function page_(data, err, month, who, self) {
 <style>
 ${adminCss_()}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head><body>
 <header><h1><i>+</i>${ADMIN.TITLE} <span class="tag">관리자 전용 · 외부 공유 금지</span></h1>${viewTabs_(self, 'resign')}
 <div class="hr"><a class="btn home" id="dash" target="_top">← 메인 대시보드</a><span id="who"></span><span id="gen"></span></div></header>
@@ -262,7 +261,6 @@ ${adminCss_()}
 tr.off td{color:var(--ink2)}
 @media print{@page{size:A4 landscape;margin:10mm}}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head><body>
 <header><h1><i>+</i>${ADMIN.PLACED_TITLE} <span class="tag">관리자 전용 · 외부 공유 금지</span></h1>${viewTabs_(self, 'placed')}
 <div class="hr"><a class="btn home" id="dash" target="_top">← 메인 대시보드</a><span id="who"></span><span id="gen"></span></div></header>
@@ -344,6 +342,48 @@ function chips(S, key, vals, label) {
 function deptSelect(S, G, cnt) {
   return '<select id="d"><option value="all">전체' + (S.g === 'all' ? '' : ' (' + esc(S.g) + ')') + '</option>' + G.deptsOf(S.g).map(d => '<option value="' + esc(d) + '"' + (S.d === d ? ' selected' : '') + '>' + esc(d) + ' (' + (cnt[d] || 0) + '명)</option>').join('') + '</select>';
 }
+// 엑셀(.xlsx) 파일을 외부 라이브러리 없이 만든다 (압축하지 않은 zip + 시트 XML)
+function makeXlsx(aoa, sheetName) {
+  const enc = new TextEncoder();
+  const xe = s => String(s).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m])).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+  const colName = i => { let s = ''; i++; while (i) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+  const n = aoa[0].length, last = colName(n - 1) + aoa.length;
+  const widths = aoa[0].map((h, i) => Math.min(40, Math.max(6, ...aoa.map(r => String(r[i] == null ? '' : r[i]).length * 1.8 + 2))));
+  const rowsXml = aoa.map((r, ri) => '<row r="' + (ri + 1) + '">' + r.map((v, ci) => {
+    const ref = colName(ci) + (ri + 1), st = ri === 0 ? ' s="1"' : '';
+    return typeof v === 'number' && isFinite(v) ? '<c r="' + ref + '"' + st + '><v>' + v + '</v></c>'
+      : '<c r="' + ref + '" t="inlineStr"' + st + '><is><t xml:space="preserve">' + xe(v == null ? '' : v) + '</t></is></c>';
+  }).join('') + '</row>').join('');
+  const NS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main', R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+  const head = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  const files = [
+    ['[Content_Types].xml', head + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'],
+    ['_rels/.rels', head + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="' + R + '/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+    ['xl/workbook.xml', head + '<workbook xmlns="' + NS + '" xmlns:r="' + R + '"><sheets><sheet name="' + xe(sheetName) + '" sheetId="1" r:id="rId1"/></sheets><definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">\'' + xe(sheetName) + '\'!$A$1:$' + colName(n - 1) + '$' + aoa.length + '</definedName></definedNames></workbook>'],
+    ['xl/_rels/workbook.xml.rels', head + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="' + R + '/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="' + R + '/styles" Target="styles.xml"/></Relationships>'],
+    ['xl/styles.xml', head + '<styleSheet xmlns="' + NS + '"><fonts count="2"><font><sz val="11"/><name val="맑은 고딕"/></font><font><b/><sz val="11"/><name val="맑은 고딕"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE8EFFF"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>'],
+    ['xl/worksheets/sheet1.xml', head + '<worksheet xmlns="' + NS + '"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>' + widths.map((w, i) => '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w.toFixed(1) + '" customWidth="1"/>').join('') + '</cols><sheetData>' + rowsXml + '</sheetData><autoFilter ref="A1:' + last + '"/></worksheet>'],
+  ];
+  const table = []; for (let k = 0; k < 256; k++) { let c = k; for (let j = 0; j < 8; j++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; table[k] = c >>> 0; }
+  const crc32 = u => { let c = 0xFFFFFFFF; for (let i = 0; i < u.length; i++) c = table[(c ^ u[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+  const parts = [], cent = []; let off = 0;
+  files.forEach(f => {
+    const nm = enc.encode(f[0]), d = enc.encode(f[1]), crc = crc32(d);
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(12, 0x21, true);
+    h.setUint32(14, crc, true); h.setUint32(18, d.length, true); h.setUint32(22, d.length, true); h.setUint16(26, nm.length, true);
+    parts.push(new Uint8Array(h.buffer), nm, d);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(14, 0x21, true);
+    c.setUint32(16, crc, true); c.setUint32(20, d.length, true); c.setUint32(24, d.length, true); c.setUint16(28, nm.length, true); c.setUint32(42, off, true);
+    cent.push(new Uint8Array(c.buffer), nm);
+    off += 30 + nm.length + d.length;
+  });
+  const size = cent.reduce((s, a) => s + a.length, 0);
+  const e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, size, true); e.setUint32(16, off, true);
+  return new Blob(parts.concat(cent, [new Uint8Array(e.buffer)]), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
 const BLANK = '∅';
 const KIT = {
   cf: {},
@@ -384,25 +424,16 @@ const KIT = {
       : '<tr><td colspan="' + C.length + '" class="empty">' + empty + '</td></tr>';
     return '<table><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
   },
-  // 지금 표에 보이는 행·열 그대로 엑셀(.xlsx)로 저장 (라이브러리를 못 불러오면 CSV)
+  // 지금 표에 보이는 행·열 그대로 엑셀(.xlsx)로 저장
   xlsx() {
     const C = KIT.cols, list = KIT.list;
     const aoa = [C.map(c => c.h)].concat(list.map(r => C.map(c => c.x ? c.x(r) : c.v(r))));
     const day = new Date(), ymd = day.getFullYear() + String(day.getMonth() + 1).padStart(2, '0') + String(day.getDate()).padStart(2, '0');
     const name = KIT.title + '_' + ymd;
-    if (window.XLSX) {
-      const ws = XLSX.utils.aoa_to_sheet(aoa);
-      ws['!autofilter'] = { ref: ws['!ref'] };
-      ws['!cols'] = C.map((c, i) => ({ wch: Math.min(40, Math.max(6, ...aoa.map(r => String(r[i] == null ? '' : r[i]).length * 1.8 + 2))) }));
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, '명단');
-      XLSX.writeFile(wb, name + '.xlsx');
-    } else {
-      const csv = '﻿' + aoa.map(r => r.map(v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-      a.download = name + '.csv'; document.body.appendChild(a); a.click(); a.remove();
-    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(makeXlsx(aoa, '명단'));
+    a.download = name + '.xlsx'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   },
   toast(msg) {
     let t = document.getElementById('toast');
