@@ -15,7 +15,7 @@ const ADMIN = {
   ROSTER_SHEET: '26신규명단',
   TZ: 'Asia/Seoul',
   TITLE: '신규간호사 사직자 명단',
-  DASHBOARD_URL: 'https://cong5772-sudo.github.io/2026new-nurse/#p2',
+  DASHBOARD_URL: 'https://2026new-nurse.vercel.app/#p2',
   GROUPS: [
     ['일반병동', ['12A', '12B', '11B', '10A', '10B', '8A', '8B', '7B', '6A']],
     ['통합병동', ['14A', '14B', '13A', '13B', '11A', '9A', '9B', '7A']],
