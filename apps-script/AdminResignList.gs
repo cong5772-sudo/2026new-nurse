@@ -2,10 +2,15 @@
  * 신규간호사 사직자 명단 (관리자 전용 페이지)
  *
  * 공개 대시보드에는 이름을 싣지 않고, 사직자 이름·부서·발령일·사직일은 이 페이지에서만 보여준다.
- * 배포 설정: [배포 > 새 배포 > 웹 앱]
- *   - 다음 사용자 인증 정보로 실행: "웹 앱에 액세스하는 사용자"
- *   - 액세스 권한이 있는 사용자: "Google 계정이 있는 모든 사용자"
- * → 페이지를 연 사람의 권한으로 원본 시트를 읽으므로, 시트를 볼 수 없는 계정은 명단도 볼 수 없다.
+ * 열람 권한: 원본 시트의 '명단열람 허용' 탭에 이메일이 적힌 계정(과 시트 소유자)만 명단을 볼 수 있다.
+ *   허용된 사람에게 원본 시트를 공유할 필요는 없다.
+ *
+ * 배포 2개 (같은 프로젝트, 같은 코드):
+ *   1) 명단 화면 — 실행: "웹 앱에 액세스하는 사용자", 액세스: "Google 계정이 있는 모든 사용자"
+ *      → 접속한 사람의 이메일을 확인한 뒤, 2)에 명단을 요청한다.
+ *   2) 데이터 통로 — 실행: "나(소유자)", 액세스: "모든 사용자"
+ *      → 접근 키(스크립트 속성 ADMIN_API_KEY)가 맞고 허용 명단에 있는 이메일일 때만 명단 JSON을 돌려준다.
+ * 스크립트 속성: ADMIN_API_KEY(임의의 긴 문자열), ADMIN_API_URL(2)의 /exec 주소)
  *
  * 대시보드와 별도의 Apps Script 프로젝트에 이 파일만 넣어 사용한다.
  */
@@ -16,6 +21,8 @@ const ADMIN = {
   TZ: 'Asia/Seoul',
   TITLE: '신규간호사 사직자 명단',
   PLACED_TITLE: '신규간호사 발령 명단',
+  ALLOW_SHEET: '명단열람 허용',   // 명단을 볼 수 있는 이메일 목록 탭
+  SELF_URL: 'https://script.google.com/macros/s/AKfycbxcWbV3KAnq5ivlE_AuhsmF8bMcci980Qk1rNUwtN49pQUdnZjpAY-FaXAmD9fyFTQygA/exec', // 1) 명단 화면 주소
   // 발령 명단에 함께 보여줄 열 (시트에 있는 것만 표시, 나머지 열은 뒤에 자동으로 붙음)
   PLACED_COLS: ['사원번호', '생년월일', '출신학교', '석차백분율', 'AI역량검사평가'],
   DASHBOARD_URL: 'https://haeundae-newnurse.vercel.app/#p2',
@@ -29,23 +36,63 @@ const ADMIN = {
 };
 
 function doGet(e) {
-  ScriptApp.requireScopes(ScriptApp.AuthMode.FULL, ['https://www.googleapis.com/auth/spreadsheets']); // 시트 권한이 없으면 승인 화면 표시
-  const view = e && e.parameter && e.parameter.view === 'placed' ? 'placed' : 'resign';
+  const prm = (e && e.parameter) || {};
+  if (prm.api) return adminApi_(prm); // 2) 데이터 통로 (소유자 권한 배포에서만 쓰임)
+  // 1) 명단 화면: 접속한 사람의 이메일 확인과 데이터 통로 호출에 필요한 권한만 요청
+  ScriptApp.requireScopes(ScriptApp.AuthMode.FULL, ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/script.external_request']);
+  const view = prm.view === 'placed' ? 'placed' : 'resign';
+  let who = '';
+  try { who = Session.getActiveUser().getEmail(); } catch (x) {}
   let data = null, err = '';
   try {
-    data = view === 'placed' ? readPlaced_() : readResigned_();
+    data = fetchAdminData_(view, who);
   } catch (x) {
     err = String(x && x.message || x);
   }
-  let who = '';
-  try { who = Session.getActiveUser().getEmail(); } catch (x) {}
-  let self = '';
-  try { self = ScriptApp.getService().getUrl(); } catch (x) {}
+  const self = ADMIN.SELF_URL;
   const month = (e && e.parameter && e.parameter.m) || '';
   const html = view === 'placed' ? placedPage_(data, err, who, self) : page_(data, err, month, who, self);
   return HtmlService.createHtmlOutput(html)
     .setTitle(view === 'placed' ? ADMIN.PLACED_TITLE : ADMIN.TITLE)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+// 1) 명단 화면 → 2) 데이터 통로에 명단 요청 (접속자 이메일과 접근 키를 함께 보냄)
+function fetchAdminData_(view, who) {
+  const props = PropertiesService.getScriptProperties();
+  const url = props.getProperty('ADMIN_API_URL'), key = props.getProperty('ADMIN_API_KEY');
+  if (!url || !key) throw new Error('관리자 데이터 연결 설정(스크립트 속성 ADMIN_API_URL·ADMIN_API_KEY)이 없습니다.');
+  if (!who) throw new Error('구글 계정 이메일을 확인할 수 없습니다. 구글에 로그인한 뒤 다시 열어 주세요.');
+  const res = UrlFetchApp.fetch(url + '?api=1&view=' + encodeURIComponent(view) + '&email=' + encodeURIComponent(who) + '&key=' + encodeURIComponent(key), { muteHttpExceptions: true, followRedirects: true });
+  let out;
+  try { out = JSON.parse(res.getContentText()); } catch (x) { throw new Error('관리자 데이터를 불러오지 못했습니다. (응답 ' + res.getResponseCode() + ')'); }
+  if (out.error) throw new Error(out.error);
+  return out.data;
+}
+
+// 2) 데이터 통로: 접근 키와 허용 명단을 확인한 뒤 소유자 권한으로 시트를 읽어 돌려준다
+function adminApi_(prm) {
+  const json = o => ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+  const key = PropertiesService.getScriptProperties().getProperty('ADMIN_API_KEY');
+  if (!key || prm.key !== key) return json({ error: '접근 키가 맞지 않습니다.' });
+  try {
+    if (!isAllowed_(String(prm.email || ''))) return json({ error: 'NOT_ALLOWED' });
+    return json({ data: prm.view === 'placed' ? readPlaced_() : readResigned_() });
+  } catch (x) {
+    return json({ error: String(x && x.message || x) });
+  }
+}
+
+// 허용 여부: 시트 소유자이거나 '명단열람 허용' 탭에 이메일이 있으면 허용 (대소문자 무시)
+function isAllowed_(email) {
+  email = email.trim().toLowerCase();
+  if (!email) return false;
+  let owner = '';
+  try { owner = Session.getEffectiveUser().getEmail().toLowerCase(); } catch (x) {}
+  if (email === owner) return true;
+  const sh = SpreadsheetApp.openById(ADMIN.SHEET_ID).getSheetByName(ADMIN.ALLOW_SHEET);
+  if (!sh) return false;
+  return sh.getDataRange().getDisplayValues().some(r => r.some(v => String(v).trim().toLowerCase() === email));
 }
 
 // 연도별 명단 탭('26신규명단', '27신규명단' …)을 모두 읽는다. 없으면 기본 탭(ROSTER_SHEET)
@@ -362,7 +409,9 @@ const app = document.getElementById('app');
 document.getElementById('dash').href = P.dash;
 document.getElementById('who').textContent = P.who ? '접속 계정: ' + P.who : '';
 function renderErr() {
-  app.innerHTML = '<div class="card err"><b>명단을 볼 수 없습니다.</b><p>이 페이지는 원본 구글 시트(신규간호사 명단)에 접근 권한이 있는 계정으로만 열 수 있습니다.' + (P.who ? ' 현재 계정: <b>' + esc(P.who) + '</b>' : '') + '</p><p class="muted">' + esc(P.err) + '</p></div>';
+  const no = P.err === 'NOT_ALLOWED';
+  app.innerHTML = '<div class="card err"><b>' + (no ? '열람이 허용되지 않은 계정입니다.' : '명단을 볼 수 없습니다.') + '</b><p>이 페이지는 열람이 허용된 관리자 계정만 볼 수 있습니다.' + (P.who ? ' 현재 계정: <b>' + esc(P.who) + '</b>' : '') + '</p>'
+    + (no ? '<p class="muted">열람이 필요하면 간호교육팀에 위 계정 이메일을 알려 주세요.</p>' : '<p class="muted">' + esc(P.err) + '</p>') + '</div>';
 }
 function groupsOf(rows) {
   const names = P.data.groups.map(g => g[0]);
