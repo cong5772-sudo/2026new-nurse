@@ -1,7 +1,7 @@
 /**
  * [부서별 발령/사직] 탭 자동 갱신
  *
- * [26신규명단]의 발령일자를 보고 회차를 자동으로 인식한 뒤,
+ * 가장 최근 연도의 명단 탭([26신규명단], 내년이면 [27신규명단] …)의 발령일자를 보고 회차를 자동으로 인식한 뒤,
  * 부서별·회차별 발령인원/사직인원과 오른쪽 합계(발령인원합·사직인원합·사직율)를 다시 계산해 적는다.
  * - 머리글 글자(예: '발령' / '발령월')에 영향받지 않는다.
  * - 회차가 빈 칸 수보다 많아지면 합계 열 앞에 2열씩 자동으로 추가한다.
@@ -24,15 +24,15 @@ const DEPT_SYNC = {
 /** 탭을 지금 바로 갱신한다. 편집기에서 실행하거나 매일 자동 실행된다. */
 function syncDeptSheet() {
   const ss = SpreadsheetApp.openById(DASH.SHEET_ID);
-  const roster = ss.getSheetByName(DASH.ROSTER_SHEET);
+  const roster = latestRosterSheet_(ss);
   const sh = ss.getSheetByName(DEPT_SYNC.SHEET);
-  if (!roster) throw new Error(`'${DASH.ROSTER_SHEET}' 탭을 찾을 수 없습니다.`);
+  if (!roster) throw new Error("'NN신규명단' 이름의 명단 탭을 찾을 수 없습니다.");
   if (!sh) throw new Error(`'${DEPT_SYNC.SHEET}' 탭을 찾을 수 없습니다.`);
 
   // 1) 명단 집계: 부서 → 발령일 → [발령인원, 사직인원]
   const rows = roster.getDataRange().getValues();
   const hi = rows.findIndex(r => r.some(v => String(v).trim() === '부서') && r.some(v => String(v).trim() === '발령일자'));
-  if (hi < 0) throw new Error(`'${DASH.ROSTER_SHEET}' 탭에서 '부서'·'발령일자' 머리글을 찾을 수 없습니다.`);
+  if (hi < 0) throw new Error(`'${roster.getName()}' 탭에서 '부서'·'발령일자' 머리글을 찾을 수 없습니다.`);
   const head = rows[hi].map(v => String(v).trim());
   const cDept = head.indexOf('부서'), cDate = head.indexOf('발령일자'), cRd = head.indexOf('사직일'), cPer = head.indexOf('사직발생기간');
   const count = {};

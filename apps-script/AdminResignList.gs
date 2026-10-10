@@ -12,7 +12,7 @@
 
 const ADMIN = {
   SHEET_ID: '1wmsLCPfP7NafHpgl7XwuE87kc42hLq3zFLgUAkKTdPA',
-  ROSTER_SHEET: '26신규명단',
+  ROSTER_SHEET: '26신규명단',   // 연도별 탭('NN신규명단')을 못 찾을 때만 쓰는 기본 탭
   TZ: 'Asia/Seoul',
   TITLE: '신규간호사 사직자 명단',
   PLACED_TITLE: '신규간호사 발령 명단',
@@ -48,14 +48,23 @@ function doGet(e) {
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
+// 연도별 명단 탭('26신규명단', '27신규명단' …)을 모두 읽는다. 없으면 기본 탭(ROSTER_SHEET)
 function roster_() {
-  const sh = SpreadsheetApp.openById(ADMIN.SHEET_ID).getSheetByName(ADMIN.ROSTER_SHEET);
-  if (!sh) throw new Error(`'${ADMIN.ROSTER_SHEET}' 탭을 찾을 수 없습니다.`);
-  const range = sh.getDataRange();
-  const rows = range.getValues(), shown = range.getDisplayValues();
-  const hi = rows.findIndex(r => r.some(v => String(v).trim() === '부서') && r.some(v => String(v).trim() === '발령일자'));
-  if (hi < 0) throw new Error('명단 머리글(부서·발령일자)을 찾을 수 없습니다.');
-  return { rows: rows, shown: shown, hi: hi, head: rows[hi].map(v => String(v).trim()) };
+  const ss = SpreadsheetApp.openById(ADMIN.SHEET_ID);
+  let sheets = ss.getSheets().filter(sh => /^\d{2}신규명단$/.test(sh.getName().replace(/\s+/g, '')))
+    .sort((a, b) => a.getName().localeCompare(b.getName()));
+  if (!sheets.length) { const sh = ss.getSheetByName(ADMIN.ROSTER_SHEET); if (sh) sheets = [sh]; }
+  if (!sheets.length) throw new Error("'NN신규명단' 이름의 명단 탭을 찾을 수 없습니다.");
+  const tabs = [];
+  sheets.forEach(sh => {
+    const range = sh.getDataRange();
+    const rows = range.getValues(), shown = range.getDisplayValues();
+    const hi = rows.findIndex(r => r.some(v => String(v).trim() === '부서') && r.some(v => String(v).trim() === '발령일자'));
+    if (hi < 0) return; // 머리글이 없는 탭은 건너뜀
+    tabs.push({ name: sh.getName(), rows: rows, shown: shown, hi: hi, head: rows[hi].map(v => String(v).trim()) });
+  });
+  if (!tabs.length) throw new Error('명단 머리글(부서·발령일자)을 찾을 수 없습니다.');
+  return tabs;
 }
 
 function ymd_(v) {
@@ -64,78 +73,87 @@ function ymd_(v) {
   return m ? `${m[1]}-${('0' + m[2]).slice(-2)}-${('0' + m[3]).slice(-2)}` : '';
 }
 
+// 회차 번호는 연도마다 1차부터 (예: 2027-01-01 → 2027년 1차)
+function cohortNo_(starts) {
+  const no = {};
+  Object.keys(starts).sort().forEach(s => { const y = s.slice(0, 4); no[y] = (no[y] || 0) + 1; starts[s] = no[y] + '차'; });
+  return starts;
+}
+
 // 신규 발령 명단: 발령자 전원과 발령 정보, 재직·사직 상태
 function readPlaced_() {
-  const R = roster_(), rows = R.rows, head = R.head;
-  const col = k => head.indexOf(k);
-  const C = { name: col('성명'), gender: col('성별'), dept: col('부서'), start: col('발령일자'), end: col('사직일'), reason: col('사직사유') };
+  const tabs = roster_();
   const groupOf = {};
   ADMIN.GROUPS.forEach(g => g[1].forEach(d => { groupOf[d] = g[0]; }));
   const used = ['성명', '성별', '부서', '발령일자', '사직일', '사직발생기간', '사직사유', '업데이트일시', ''];
-  const pref = ADMIN.PLACED_COLS.filter(k => head.indexOf(k) >= 0);
-  const others = head.filter(k => used.indexOf(k) < 0 && pref.indexOf(k) < 0 && !/^(no\.?|순번|번호|연번)$/i.test(k));
-  let cols = pref.concat(others).map(k => ({ k: k, i: head.indexOf(k) }));
+  // 함께 보여줄 열: 정해 둔 순서 먼저, 나머지 열은 탭에 나온 순서대로 (여러 탭의 열을 합침)
+  const all = [];
+  tabs.forEach(T => T.head.forEach(k => { if (all.indexOf(k) < 0) all.push(k); }));
+  const pref = ADMIN.PLACED_COLS.filter(k => all.indexOf(k) >= 0);
+  let cols = pref.concat(all.filter(k => used.indexOf(k) < 0 && pref.indexOf(k) < 0 && !/^(no\.?|순번|번호|연번)$/i.test(k)));
   const today = Utilities.formatDate(new Date(), ADMIN.TZ, 'yyyy-MM-dd');
   const starts = {}, list = [];
-  for (let i = R.hi + 1; i < rows.length; i++) {
-    const r = rows[i];
-    const dept = String(r[C.dept] || '').trim(), start = ymd_(r[C.start]);
-    if (!dept || !start) continue;
-    starts[start] = true;
-    const end = C.end >= 0 ? ymd_(r[C.end]) : '';
-    list.push({
-      name: String(C.name >= 0 ? r[C.name] : '').trim(),
-      gender: String(C.gender >= 0 ? r[C.gender] : '').trim().replace('자', ''),
-      dept: dept, group: groupOf[dept] || '기타', start: start, end: end,
-      days: Math.max(0, Math.round((Date.parse(end || today) - Date.parse(start)) / 864e5)),
-      reason: end ? (String(C.reason >= 0 ? r[C.reason] : '').trim() || '미기재') : '',
-      x: cols.map(c => String(R.shown[i][c.i] || '').trim()),
-    });
-  }
+  tabs.forEach(T => {
+    const col = k => T.head.indexOf(k);
+    const C = { name: col('성명'), gender: col('성별'), dept: col('부서'), start: col('발령일자'), end: col('사직일'), reason: col('사직사유') };
+    const ci = cols.map(k => col(k));
+    for (let i = T.hi + 1; i < T.rows.length; i++) {
+      const r = T.rows[i];
+      const dept = String(r[C.dept] || '').trim(), start = ymd_(r[C.start]);
+      if (!dept || !start) continue;
+      starts[start] = true;
+      const end = C.end >= 0 ? ymd_(r[C.end]) : '';
+      list.push({
+        name: String(C.name >= 0 ? r[C.name] : '').trim(),
+        gender: String(C.gender >= 0 ? r[C.gender] : '').trim().replace('자', ''),
+        dept: dept, group: groupOf[dept] || '기타', start: start, end: end,
+        days: Math.max(0, Math.round((Date.parse(end || today) - Date.parse(start)) / 864e5)),
+        reason: end ? (String(C.reason >= 0 ? r[C.reason] : '').trim() || '미기재') : '',
+        x: ci.map(j => j >= 0 ? String(T.shown[i][j] || '').trim() : ''),
+      });
+    }
+  });
   // 값이 하나도 없는 열은 빼기
   const keep = cols.map((c, j) => list.some(x => x.x[j]));
   cols = cols.filter((c, j) => keep[j]);
   list.forEach(x => { x.x = x.x.filter((v, j) => keep[j]); });
-  const cohorts = Object.keys(starts).sort();
-  list.forEach(x => { x.cohort = (cohorts.indexOf(x.start) + 1) + '차'; });
+  const no = cohortNo_(Object.assign({}, starts));
+  list.forEach(x => { x.cohort = no[x.start]; });
   const gi = {};
   ADMIN.GROUPS.forEach((g, n) => g[1].forEach((d, m) => { gi[d] = n * 100 + m; }));
   const ord = d => (d in gi ? gi[d] : 9999);
   list.sort((a, b) => (a.start < b.start ? 1 : a.start > b.start ? -1 : (ord(a.dept) - ord(b.dept)) || a.name.localeCompare(b.name)));
-  return { rows: list, cols: cols.map(c => c.k), cohorts: cohorts, generated: Utilities.formatDate(new Date(), ADMIN.TZ, 'yyyy-MM-dd HH:mm'), groups: ADMIN.GROUPS };
+  return { rows: list, cols: cols, cohorts: Object.keys(starts).sort(), cohortNo: no, generated: Utilities.formatDate(new Date(), ADMIN.TZ, 'yyyy-MM-dd HH:mm'), groups: ADMIN.GROUPS };
 }
 
 function readResigned_() {
-  const R0 = roster_(), rows = R0.rows, hi = R0.hi, head = R0.head;
-  const C = { name: head.indexOf('성명'), gender: head.indexOf('성별'), dept: head.indexOf('부서'), start: head.indexOf('발령일자'),
-    end: head.indexOf('사직일'), period: head.indexOf('사직발생기간'), reason: head.indexOf('사직사유') };
+  const tabs = roster_();
   const groupOf = {};
   ADMIN.GROUPS.forEach(g => g[1].forEach(d => { groupOf[d] = g[0]; }));
-  const fmt = v => {
-    if (v instanceof Date && !isNaN(v)) return Utilities.formatDate(v, ADMIN.TZ, 'yyyy-MM-dd');
-    const m = String(v || '').trim().match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
-    return m ? `${m[1]}-${('0' + m[2]).slice(-2)}-${('0' + m[3]).slice(-2)}` : '';
-  };
-  const starts = {};
-  const list = [];
-  for (let i = hi + 1; i < rows.length; i++) {
-    const r = rows[i];
-    const dept = String(r[C.dept] || '').trim(), start = fmt(r[C.start]);
-    if (!dept || !start) continue;
-    starts[start] = true;
-    const end = C.end >= 0 ? fmt(r[C.end]) : '';
-    if (!end) continue;
-    const days = Math.round((Date.parse(end) - Date.parse(start)) / 864e5);
-    list.push({
-      name: String(C.name >= 0 ? r[C.name] : '').trim(),
-      gender: String(C.gender >= 0 ? r[C.gender] : '').trim().replace('자', ''),
-      dept: dept, group: groupOf[dept] || '기타', start: start, end: end, days: days,
-      period: String(C.period >= 0 ? r[C.period] : '').trim(),
-      reason: String(C.reason >= 0 ? r[C.reason] : '').trim() || '미기재',
-    });
-  }
-  const cohorts = Object.keys(starts).sort();
-  list.forEach(x => { x.cohort = (cohorts.indexOf(x.start) + 1) + '차'; });
+  const starts = {}, list = [];
+  tabs.forEach(T => {
+    const head = T.head;
+    const C = { name: head.indexOf('성명'), gender: head.indexOf('성별'), dept: head.indexOf('부서'), start: head.indexOf('발령일자'),
+      end: head.indexOf('사직일'), period: head.indexOf('사직발생기간'), reason: head.indexOf('사직사유') };
+    for (let i = T.hi + 1; i < T.rows.length; i++) {
+      const r = T.rows[i];
+      const dept = String(r[C.dept] || '').trim(), start = ymd_(r[C.start]);
+      if (!dept || !start) continue;
+      starts[start] = true;
+      const end = C.end >= 0 ? ymd_(r[C.end]) : '';
+      if (!end) continue;
+      list.push({
+        name: String(C.name >= 0 ? r[C.name] : '').trim(),
+        gender: String(C.gender >= 0 ? r[C.gender] : '').trim().replace('자', ''),
+        dept: dept, group: groupOf[dept] || '기타', start: start, end: end,
+        days: Math.round((Date.parse(end) - Date.parse(start)) / 864e5),
+        period: String(C.period >= 0 ? r[C.period] : '').trim(),
+        reason: String(C.reason >= 0 ? r[C.reason] : '').trim() || '미기재',
+      });
+    }
+  });
+  const no = cohortNo_(starts);
+  list.forEach(x => { x.cohort = no[x.start]; });
   list.sort((a, b) => (a.end < b.end ? 1 : a.end > b.end ? -1 : a.dept.localeCompare(b.dept)));
   return { rows: list, generated: Utilities.formatDate(new Date(), ADMIN.TZ, 'yyyy-MM-dd HH:mm'), groups: ADMIN.GROUPS };
 }
@@ -159,7 +177,9 @@ if (P.err || !P.data) {
   document.getElementById('gen').textContent = '조회 ' + P.data.generated;
   const rows = P.data.rows;
   const months = [...new Set(rows.map(r => r.end.slice(0, 7)))].sort().reverse();
-  const S = { m: months.includes(P.month) ? P.month : 'all', g: 'all', d: 'all', q: '' };
+  const years = [...new Set(rows.map(r => r.start.slice(0, 4)))].sort();
+  const S = { y: 'all', m: months.includes(P.month) ? P.month : 'all', g: 'all', d: 'all', q: '' };
+  const yc = r => (years.length > 1 ? r.start.slice(2, 4) + '년 ' : '') + r.cohort;
   const G = groupsOf(rows);
   const ml = m => m.slice(0, 4) + '년 ' + (+m.slice(5)) + '월';
   const C = [
@@ -168,7 +188,7 @@ if (P.err || !P.data) {
     { h: '부서군', v: r => r.group },
     { h: '성명', v: r => r.name, l: 1, b: 1 },
     { h: '성별', v: r => r.gender },
-    { h: '발령 회차', v: r => r.cohort },
+    { h: '발령 회차', v: yc },
     { h: '발령일', v: r => dot(r.start) },
     { h: '근속(일)', v: r => String(r.days), x: r => r.days },
     { h: '사직 시기', v: r => r.period },
@@ -178,14 +198,15 @@ if (P.err || !P.data) {
   KIT.draw = function () {
     const q = S.q.trim().toLowerCase();
     const hit = r => !q || (r.name + r.dept + r.reason).toLowerCase().includes(q);
-    const pre = rows.filter(r => (S.m === 'all' || r.end.slice(0, 7) === S.m) && (S.g === 'all' || r.group === S.g) && (S.d === 'all' || r.dept === S.d) && hit(r));
+    const pre = rows.filter(r => (S.y === 'all' || r.start.startsWith(S.y)) && (S.m === 'all' || r.end.slice(0, 7) === S.m) && (S.g === 'all' || r.group === S.g) && (S.d === 'all' || r.dept === S.d) && hit(r));
     const list = KIT.prep(C, pre);
-    const cnt = {}; rows.filter(r => (S.m === 'all' || r.end.slice(0, 7) === S.m) && hit(r)).forEach(r => { cnt[r.dept] = (cnt[r.dept] || 0) + 1; });
+    const cnt = {}; rows.filter(r => (S.y === 'all' || r.start.startsWith(S.y)) && (S.m === 'all' || r.end.slice(0, 7) === S.m) && hit(r)).forEach(r => { cnt[r.dept] = (cnt[r.dept] || 0) + 1; });
     const by = {}; list.forEach(r => { (by[r.end.slice(0, 7)] = by[r.end.slice(0, 7)] || []).push(r); });
     const avg = list.length ? Math.round(list.reduce((s, r) => s + r.days, 0) / list.length) : 0;
     const early = list.filter(r => r.days <= 92).length;
-    KIT.cond = (S.m === 'all' ? '전체 기간' : ml(S.m)) + (S.g === 'all' ? '' : ' · ' + S.g) + (S.d === 'all' ? '' : ' · ' + S.d) + KIT.cfLabel(C);
+    KIT.cond = (S.y === 'all' ? '' : S.y + '년 발령 · ') + (S.m === 'all' ? '전체 기간' : ml(S.m)) + (S.g === 'all' ? '' : ' · ' + S.g) + (S.d === 'all' ? '' : ' · ' + S.d) + KIT.cfLabel(C);
     app.innerHTML = '<div class="card filters">'
+      + '<div><span class="fl">발령 연도</span>' + chips(S, 'y', years.slice().reverse(), v => v + '년') + '</div>'
       + '<div><span class="fl">사직월</span>' + chips(S, 'm', months, ml) + '</div>'
       + '<div><span class="fl">부서군</span>' + chips(S, 'g', G.names, v => v) + '</div>'
       + '<div><span class="fl">세부부서</span>' + deptSelect(S, G, cnt) + '</div>'
@@ -195,7 +216,7 @@ if (P.err || !P.data) {
       + KIT.table(C, list, Object.keys(by).sort().reverse().map(m => ({ label: ml(m) + ' · ' + by[m].length + '명', rows: by[m] })), '조건에 맞는 사직자가 없습니다.') + '</div>';
     KIT.list = list; KIT.cols = C;
   };
-  KIT.onChip = (k, v) => { S[k] = v; if (k === 'g' && S.d !== 'all' && !G.deptsOf(S.g).includes(S.d)) S.d = 'all'; };
+  KIT.onChip = (k, v) => { S[k] = v; if (k === 'y' && 'c' in S) S.c = 'all'; if (k === 'g' && S.d !== 'all' && !G.deptsOf(S.g).includes(S.d)) S.d = 'all'; };
   KIT.onDept = v => { S.d = v; };
   KIT.onSearch = v => { S.q = v; };
   KIT.start();
@@ -285,16 +306,17 @@ if (P.err || !P.data) {
   document.getElementById('gen').textContent = '조회 ' + P.data.generated;
   const rows = P.data.rows, cols = P.data.cols, coh = P.data.cohorts;
   const G = groupsOf(rows);
-  const S = { c: 'all', g: 'all', d: 'all', s: 'all', q: '' };
-  const cl = c => (coh.indexOf(c) + 1) + '차 (' + dot(c) + ')';
-  const C = [
+  const years = [...new Set(coh.map(c => c.slice(0, 4)))].sort();
+  const S = { y: years.length > 1 ? years[years.length - 1] : 'all', c: 'all', g: 'all', d: 'all', s: 'all', q: '' };
+  const cl = c => (years.length > 1 ? c.slice(0, 4) + '년 ' : '') + P.data.cohortNo[c] + ' (' + dot(c) + ')';
+  const C = (years.length > 1 ? [{ h: '발령연도', v: r => r.start.slice(0, 4) + '년' }] : []).concat([
     { h: '회차', v: r => r.cohort },
     { h: '발령일', v: r => dot(r.start) },
     { h: '부서', v: r => r.dept, l: 1, b: 1 },
     { h: '부서군', v: r => r.group },
     { h: '성명', v: r => r.name, l: 1, b: 1 },
     { h: '성별', v: r => r.gender },
-  ].concat(cols.map((k, j) => ({ h: k, v: r => r.x[j] }))).concat([
+  ]).concat(cols.map((k, j) => ({ h: k, v: r => r.x[j] }))).concat([
     { h: '상태', v: r => r.end ? '사직' : '재직', html: r => '<span class="st ' + (r.end ? 'off">사직' : 'on">재직') + '</span>' },
     { h: '사직일', v: r => dot(r.end), html: r => r.end ? '<span class="st off">' + dot(r.end) + '</span>' : '' },
     { h: '근속(일)', v: r => String(r.days), x: r => r.days },
@@ -305,14 +327,15 @@ if (P.err || !P.data) {
   KIT.draw = function () {
     const q = S.q.trim().toLowerCase();
     const hit = r => !q || (r.name + r.dept + r.x.join(' ')).toLowerCase().includes(q);
-    const pre = rows.filter(r => (S.c === 'all' || r.start === S.c) && (S.g === 'all' || r.group === S.g) && (S.d === 'all' || r.dept === S.d) && (S.s === 'all' || (S.s === 'on' ? !r.end : !!r.end)) && hit(r));
+    const pre = rows.filter(r => (S.y === 'all' || r.start.startsWith(S.y)) && (S.c === 'all' || r.start === S.c) && (S.g === 'all' || r.group === S.g) && (S.d === 'all' || r.dept === S.d) && (S.s === 'all' || (S.s === 'on' ? !r.end : !!r.end)) && hit(r));
     const list = KIT.prep(C, pre);
-    const cnt = {}; rows.filter(r => (S.c === 'all' || r.start === S.c) && hit(r)).forEach(r => { cnt[r.dept] = (cnt[r.dept] || 0) + 1; });
+    const cnt = {}; rows.filter(r => (S.y === 'all' || r.start.startsWith(S.y)) && (S.c === 'all' || r.start === S.c) && hit(r)).forEach(r => { cnt[r.dept] = (cnt[r.dept] || 0) + 1; });
     const out = list.filter(r => r.end).length;
     const by = {}; list.forEach(r => { (by[r.start] = by[r.start] || []).push(r); });
-    KIT.cond = (S.c === 'all' ? '전체 회차' : cl(S.c)) + (S.g === 'all' ? '' : ' · ' + S.g) + (S.d === 'all' ? '' : ' · ' + S.d) + (S.s === 'all' ? '' : ' · ' + (S.s === 'on' ? '재직자' : '사직자')) + KIT.cfLabel(C);
+    KIT.cond = (S.y === 'all' ? '' : S.y + '년 · ') + (S.c === 'all' ? '전체 회차' : cl(S.c)) + (S.g === 'all' ? '' : ' · ' + S.g) + (S.d === 'all' ? '' : ' · ' + S.d) + (S.s === 'all' ? '' : ' · ' + (S.s === 'on' ? '재직자' : '사직자')) + KIT.cfLabel(C);
     app.innerHTML = '<div class="card filters">'
-      + '<div><span class="fl">발령 회차</span>' + chips(S, 'c', coh.slice().reverse(), cl) + '</div>'
+      + '<div><span class="fl">발령 연도</span>' + chips(S, 'y', years.slice().reverse(), v => v + '년') + '</div>'
+      + '<div><span class="fl">발령 회차</span>' + chips(S, 'c', coh.filter(c => S.y === 'all' || c.startsWith(S.y)).reverse(), cl) + '</div>'
       + '<div><span class="fl">부서군</span>' + chips(S, 'g', G.names, v => v) + '</div>'
       + '<div><span class="fl">세부부서</span>' + deptSelect(S, G, cnt) + '</div>'
       + '<div><span class="fl">상태</span>' + chips(S, 's', ['on', 'off'], v => v === 'on' ? '재직' : '사직') + '</div>'
@@ -322,7 +345,7 @@ if (P.err || !P.data) {
       + KIT.table(C, list, Object.keys(by).sort().reverse().map(s => ({ label: cl(s) + ' · ' + by[s].length + '명', rows: by[s] })), '조건에 맞는 발령자가 없습니다.') + '</div>';
     KIT.list = list; KIT.cols = C;
   };
-  KIT.onChip = (k, v) => { S[k] = v; if (k === 'g' && S.d !== 'all' && !G.deptsOf(S.g).includes(S.d)) S.d = 'all'; };
+  KIT.onChip = (k, v) => { S[k] = v; if (k === 'y' && 'c' in S) S.c = 'all'; if (k === 'g' && S.d !== 'all' && !G.deptsOf(S.g).includes(S.d)) S.d = 'all'; };
   KIT.onDept = v => { S.d = v; };
   KIT.onSearch = v => { S.q = v; };
   KIT.start();

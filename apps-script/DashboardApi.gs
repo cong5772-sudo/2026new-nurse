@@ -1,7 +1,8 @@
 /**
  * 신규간호사 발령 유지관리 시스템 — 집계 데이터 API (Google Apps Script 웹앱)
  *
- * 구글 시트 [26신규명단]을 읽어 대시보드에 필요한 "집계값"만 JSON으로 내보낸다.
+ * 구글 시트의 연도별 명단 탭([26신규명단], [27신규명단] …)을 모두 읽어 대시보드에 필요한 "집계값"만 JSON으로 내보낸다.
+ * 해마다 'NN신규명단' 이름으로 새 탭을 만들면 자동으로 함께 집계된다.
  * 성명·사원번호·출신학교 등 개인 단위 정보는 응답에 포함하지 않는다.
  *
  * 설치: 배포가이드(README.md) 2단계 참고. 새 Apps Script 프로젝트에 이 파일만 넣고
@@ -11,7 +12,7 @@
 const DASH = {
   // 원본 구글 시트 ID (주소창의 /d/ 와 /edit 사이 문자열)
   SHEET_ID: '1wmsLCPfP7NafHpgl7XwuE87kc42hLq3zFLgUAkKTdPA',
-  ROSTER_SHEET: '26신규명단',      // 신규간호사 명단 탭
+  ROSTER_SHEET: '26신규명단',      // 연도별 탭('NN신규명단')을 못 찾을 때만 쓰는 기본 탭
   PREV_SHEET: '부서별 발령/사직',  // 부서별 전년도 사직율이 있는 탭
   TZ: 'Asia/Seoul',
   CACHE_SECONDS: 300,             // 같은 응답을 5분간 재사용 (속도 향상)
@@ -62,18 +63,8 @@ function testDashboardData() {
 
 function buildDashboardData_() {
   const ss = SpreadsheetApp.openById(DASH.SHEET_ID);
-  const sh = ss.getSheetByName(DASH.ROSTER_SHEET);
-  if (!sh) throw new Error(`'${DASH.ROSTER_SHEET}' 탭을 찾을 수 없습니다.`);
-  const rows = sh.getDataRange().getValues();
-  const hi = rows.findIndex(r => r.some(v => String(v).trim() === '부서') && r.some(v => String(v).trim() === '발령일자'));
-  if (hi < 0) throw new Error(`'${DASH.ROSTER_SHEET}' 탭에서 '부서'·'발령일자' 머리글을 찾을 수 없습니다.`);
-  const head = rows[hi].map(v => String(v).trim());
-  const col = name => head.indexOf(name);
-  const C = {
-    dept: col('부서'), date: col('발령일자'), gender: col('성별'), rank: col('석차백분율'),
-    ai: col('AI역량검사평가'), rd: col('사직일'), period: col('사직발생기간'), reason: col('사직사유'), upd: col('업데이트일시'),
-  };
-
+  const tabs = rosterSheets_(ss);
+  if (!tabs.length) throw new Error("'NN신규명단' 이름의 명단 탭을 찾을 수 없습니다.");
   const groups = DASH.GROUPS.map(g => [g[0], g[1].slice()]);
   const groupOf = {};
   groups.forEach(g => g[1].forEach(d => { groupOf[d] = g[0]; }));
@@ -87,50 +78,63 @@ function buildDashboardData_() {
     if (days != null) v[1].push(days);
   };
 
-  for (let i = hi + 1; i < rows.length; i++) {
-    const r = rows[i];
-    const d = String(r[C.dept] || '').trim();
-    const start = ymd_(r[C.date]);
-    if (!d || !start) continue;
-    if (!groupOf[d]) { groupOf[d] = '기타'; extra.push(d); }
-    const g = groupOf[d];
-    const c = start.s;
-    const end = C.rd >= 0 ? ymd_(r[C.rd]) : null;
-    const days = end ? Math.round((end.t - start.t) / 864e5) : null;
+  tabs.forEach(tab => {
+    const rows = tab.sh.getDataRange().getValues();
+    const hi = rows.findIndex(r => r.some(v => String(v).trim() === '부서') && r.some(v => String(v).trim() === '발령일자'));
+    if (hi < 0) return; // 머리글이 없는 탭은 건너뜀
+    const head = rows[hi].map(v => String(v).trim());
+    const col = name => head.indexOf(name);
+    const C = {
+      dept: col('부서'), date: col('발령일자'), gender: col('성별'), rank: col('석차백분율'),
+      ai: col('AI역량검사평가'), rd: col('사직일'), period: col('사직발생기간'), reason: col('사직사유'), upd: col('업데이트일시'),
+    };
 
-    const dk = c + '|' + d;
-    const dv = dept[dk] || (dept[dk] = [0, 0]);
-    dv[0]++; if (end) dv[1]++;
+    for (let i = hi + 1; i < rows.length; i++) {
+      const r = rows[i];
+      const d = String(r[C.dept] || '').trim();
+      const start = ymd_(r[C.date]);
+      if (!d || !start) continue;
+      if (!groupOf[d]) { groupOf[d] = '기타'; extra.push(d); }
+      const g = groupOf[d];
+      const c = start.s;
+      const end = C.rd >= 0 ? ymd_(r[C.rd]) : null;
+      const days = end ? Math.round((end.t - start.t) / 864e5) : null;
 
-    const base = c + '|' + g + '|';
-    facet(gender, base + ({ '남자': '남', '남': '남', '여자': '여', '여': '여' }[String(r[C.gender] || '').trim()] || '미기재'), days);
-    facet(ai, base + (String(C.ai >= 0 ? r[C.ai] : '').trim() || '미기재'), days);
-    facet(rank, base + rankBand_(C.rank >= 0 ? r[C.rank] : ''), days);
-    facet(track, base + (DASH.TRACKS[d] || '미분류'), days);
-    if ({ '남자': 1, '남': 1 }[String(r[C.gender] || '').trim()]) {
-      const mv = maleDept[dk] || (maleDept[dk] = [0, 0]);
-      mv[0]++; if (end) mv[1]++;
-    }
+      const dk = c + '|' + d;
+      const dv = dept[dk] || (dept[dk] = [0, 0]);
+      dv[0]++; if (end) dv[1]++;
 
-    if (end) {
-      const m = monthIndex_(start, end);
-      const per = String(C.period >= 0 ? r[C.period] : '').trim() || periodLabel_(m);
-      const why = String(C.reason >= 0 ? r[C.reason] : '').trim() || '미기재';
-      const rk = [c, g, per, why, m, days].join('\u0001');
-      res[rk] = (res[rk] || 0) + 1;
+      const base = c + '|' + g + '|';
+      facet(gender, base + ({ '남자': '남', '남': '남', '여자': '여', '여': '여' }[String(r[C.gender] || '').trim()] || '미기재'), days);
+      facet(ai, base + (String(C.ai >= 0 ? r[C.ai] : '').trim() || '미기재'), days);
+      facet(rank, base + rankBand_(C.rank >= 0 ? r[C.rank] : ''), days);
+      facet(track, base + (DASH.TRACKS[d] || '미분류'), days);
+      if ({ '남자': 1, '남': 1 }[String(r[C.gender] || '').trim()]) {
+        const mv = maleDept[dk] || (maleDept[dk] = [0, 0]);
+        mv[0]++; if (end) mv[1]++;
+      }
+
+      if (end) {
+        const m = monthIndex_(start, end);
+        const per = String(C.period >= 0 ? r[C.period] : '').trim() || periodLabel_(m);
+        const why = String(C.reason >= 0 ? r[C.reason] : '').trim() || '미기재';
+        const rk = [c, g, per, why, m, days].join('\u0001');
+        res[rk] = (res[rk] || 0) + 1;
+      }
+      if (C.upd >= 0 && r[C.upd]) {
+        const u = r[C.upd] instanceof Date ? r[C.upd] : new Date(String(r[C.upd]).replace(' ', 'T'));
+        if (!isNaN(u) && (!lastUpdate || u > lastUpdate)) lastUpdate = u;
+      }
     }
-    if (C.upd >= 0 && r[C.upd]) {
-      const u = r[C.upd] instanceof Date ? r[C.upd] : new Date(String(r[C.upd]).replace(' ', 'T'));
-      if (!isNaN(u) && (!lastUpdate || u > lastUpdate)) lastUpdate = u;
-    }
-  }
+  });
   if (extra.length) groups.push(['기타', extra]);
   [gender, ai, rank, track].forEach(o => Object.keys(o).forEach(k => o[k][1].sort((a, b) => a - b)));
 
   const fmt = dt => Utilities.formatDate(dt, DASH.TZ, 'yyyy-MM-dd HH:mm');
   return {
     version: 1,
-    sheet: DASH.ROSTER_SHEET,
+    sheet: tabs.map(x => x.name).join(', '),
+    years: tabs.map(x => x.year),
     generatedAt: fmt(new Date()),
     lastUpdate: lastUpdate ? fmt(lastUpdate) : null,
     groups: groups,
@@ -147,6 +151,26 @@ function buildDashboardData_() {
     }),
     prev: readPrevRates_(ss),
   };
+}
+
+/** 'NN신규명단' 이름의 탭을 연도 순으로 찾는다 (예: 26신규명단 → 2026년). 없으면 기본 탭 */
+function rosterSheets_(ss) {
+  const list = ss.getSheets().map(sh => {
+    const m = sh.getName().replace(/\s+/g, '').match(/^(\d{2})신규명단$/);
+    return m ? { sh: sh, name: sh.getName(), year: 2000 + Number(m[1]) } : null;
+  }).filter(Boolean).sort((a, b) => a.year - b.year);
+  if (!list.length) {
+    const sh = ss.getSheetByName(DASH.ROSTER_SHEET);
+    if (sh) list.push({ sh: sh, name: sh.getName(), year: 0 });
+  }
+  return list;
+}
+
+/** 가장 최근 연도의 명단 탭 (발령자가 한 명 이상 들어 있는 탭) */
+function latestRosterSheet_(ss) {
+  const tabs = rosterSheets_(ss);
+  for (let i = tabs.length - 1; i >= 0; i--) if (tabs[i].sh.getLastRow() > 2) return tabs[i].sh;
+  return tabs.length ? tabs[tabs.length - 1].sh : null;
 }
 
 /** '부서별 발령/사직' 탭에서 'YYYY년 사직율' 열을 찾아 부서별 전년도 사직율을 읽는다 */

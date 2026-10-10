@@ -635,11 +635,14 @@ svg text{font-family:var(--f-ui)}
 const CFG = window.DASH_CONFIG || {};
 const TARGET = CFG.TARGET ?? 0.20;
 const PREV_ALL = CFG.PREV_ALL || {};
-const pa = y => PREV_ALL[y] || {};
+// 연도별 발령·사직 합계 (발령일 기준)
+const yearTot = y => { let p = 0, r = 0; for (const [k, [pp, rr]] of Object.entries(A.dept)) if (k.startsWith(y + '-')){ p += pp; r += rr; } return { p, r }; };
+// 연도별 비교값: 시트에 그 연도 탭이 있으면 실제 값, 없으면 config.js의 PREV_ALL
+const pa = y => { if (A && YEARS.includes(y)){ const t = yearTot(y); return { placed: t.p, rate: t.p ? t.r / t.p : NaN }; } return PREV_ALL[y] || {}; };
 const _now = new Date();
 const TODAY = new Date(_now.getFullYear(), _now.getMonth(), _now.getDate());
 // 아래 값은 API 응답을 받은 뒤 setData()에서 채운다
-let A = null, PREV = {}, GROUPS = [], GNAMES = [], DPOS = {}, COH = [], DAY0, Y0, Y1, Y2;
+let A = null, PREV = {}, PREVSHEET = {}, GROUPS = [], GNAMES = [], DPOS = {}, COH = [], YEARS = [], YLATEST, DAY0, Y0, Y1, Y2, YINIT = false;
 const grpOf = d => DPOS[d]?.[2] ?? '기타';
 function setData(data){
   A = data;
@@ -647,14 +650,30 @@ function setData(data){
   DPOS = {}; GROUPS.forEach(([g, ds], gi) => ds.forEach((d, i) => DPOS[d] = [gi, i, g]));
   COH = [...new Set(Object.keys(A.dept).map(k => k.split('|')[0]))].sort();
   DAY0 = new Date(COH[0] + 'T00:00:00');
-  Y0 = +COH.at(-1).slice(0, 4); Y1 = Y0 - 1; Y2 = Y0 - 2;
-  PREV = {};
-  for (const [d, v] of Object.entries(data.prev?.dept || {})) PREV[d] = [v[Y2] ?? NaN, v[Y1] ?? NaN]; // [2년 전, 1년 전]
+  YEARS = [...new Set(COH.map(c => +c.slice(0, 4)))].sort(); YLATEST = YEARS.at(-1);
+  PREVSHEET = data.prev?.dept || {};
+  // 연도 탭이 2개 이상이면 처음 열 때 가장 최근 연도를 보여준다
+  if (!YINIT){ YINIT = true; if (YEARS.length > 1 && SB.y === 'all'){ SB.y = YLATEST; syncPS(); } }
+  setYear();
   if (!GNAMES.includes(S.g)) S.g = 'all';
   if (!COH.includes(S.c)) S.c = 'all';
 }
+// 기준 연도(Y0)와 비교 연도(Y1·Y2): 왼쪽 '기준일시'에서 연도를 고르면 그 연도, 아니면 가장 최근 연도
+function setYear(){
+  Y0 = SB.y !== 'all' ? SB.y : YLATEST; Y1 = Y0 - 1; Y2 = Y0 - 2;
+  // 부서별 전년도 사직율: 시트에 그 연도 탭이 있으면 실제 값, 없으면 '부서별 발령/사직' 탭의 값
+  const rateOf = (y, d) => {
+    if (!YEARS.includes(y)) return PREVSHEET[d]?.[y] ?? NaN;
+    let p = 0, r = 0;
+    for (const [k, [pp, rr]] of Object.entries(A.dept)){ const [c, dd] = k.split('|'); if (dd === d && c.startsWith(y + '-')){ p += pp; r += rr; } }
+    return p ? r / p : NaN;
+  };
+  PREV = {};
+  const depts = new Set(Object.keys(A.dept).map(k => k.split('|')[1]).concat(Object.keys(PREVSHEET)));
+  for (const d of depts){ const v = [rateOf(Y2, d), rateOf(Y1, d)]; if (v.some(x => !isNaN(x))) PREV[d] = v; } // [2년 전, 1년 전]
+}
 const SER = i => ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)', 'var(--s5)', 'var(--s6)'][i % 6];
-const cLab = c => (COH.indexOf(c) + 1) + '차';
+const cLab = c => (YEARS.length > 1 && SB.y === 'all' ? c.slice(2, 4) + '년 ' : '') + (COH.filter(x => x.slice(0, 4) === c.slice(0, 4)).indexOf(c) + 1) + '차';
 const cShort = c => c.slice(5).replace('-', '.');
 const S = { c:'all', g:'all', d:'all', page:'p1', tab:'hr', sort:{k:'tot',dir:-1}, q:'' };
 // 사이드바 기간 선택: 연도 / 분기(여러 개) / 월(여러 개) → 아래 syncPS()가 PS(기간 상태)로 옮긴다
@@ -783,17 +802,17 @@ function kpi(lab, val, unit, sub){ return `<div class="kpi"><span class="lab">${
 
 // 전년도 비교: 연도별 발령인원을 재직(파랑)·사직(주황)으로 나눈 가로 막대 (전체 기준)
 function yoy(){
-  const cy = +COH.at(-1).slice(0, 4);
-  let p = 0, r = 0; for (const [, [pp, rr]] of Object.entries(A.dept)){ p += pp; r += rr; }
-  const rows = Object.keys(PREV_ALL).map(Number).filter(y => y < cy).sort().map(y => { const x = PREV_ALL[y]; const rr = Math.round(x.placed * x.rate); return { y, p: x.placed, r: rr, rate: x.rate, est: true }; });
-  rows.push({ y: cy, p, r, rate: p ? r / p : 0, cur: true });
+  const cy = Y0;
+  const rows = Object.keys(PREV_ALL).map(Number).filter(y => !YEARS.includes(y) && y < YEARS[0]).map(y => { const x = PREV_ALL[y]; const rr = Math.round(x.placed * x.rate); return { y, p: x.placed, r: rr, rate: x.rate, est: true }; });
+  YEARS.forEach(y => { const s = yearTot(y); rows.push({ y, p: s.p, r: s.r, rate: s.p ? s.r / s.p : 0, cur: y === cy, open: y >= TODAY.getFullYear() }); });
+  rows.sort((a, b) => a.y - b.y);
   const max = Math.max(...rows.map(x => x.p));
-  const prev = rows.length > 1 ? rows[rows.length - 2] : null;
-  return `<section class="panel w12 yoy"><div class="ph"><div><h2>전년도 비교</h2><p>신규간호사 전체 기준 · 전년도 사직인원은 사직율로 환산한 값</p></div>
+  const ci = rows.findIndex(x => x.cur), prev = ci > 0 ? rows[ci - 1] : null;
+  return `<section class="panel w12 yoy"><div class="ph"><div><h2>전년도 비교</h2><p>신규간호사 전체 기준 · 연도별 발령 탭의 실제 값${rows.some(x => x.est) ? ' · 탭이 없는 연도는 사직율로 환산한 값' : ''}</p></div>
     <div class="legend"><span><i class="sw" style="--c:var(--s1)"></i>재직</span><span><i class="sw" style="--c:var(--s2)"></i>사직</span></div></div>
     <div class="ybars">${rows.map(x => `<div class="yb" data-tip="${x.y}년\n발령 ${x.p}명 · 사직 ${x.r}명${x.est ? ' (환산)' : ''} · 사직율 ${pct(x.rate)}">
       <b>${x.y}</b><div class="ytr"><i style="width:${(x.p - x.r) / max * 100}%;background:var(--s1)"></i><i style="width:${x.r / max * 100}%;background:var(--s2)"></i></div>
-      <span>총 ${x.p}명${x.cur ? ' (진행중)' : ''}</span></div>`).join('')}</div>
+      <span>총 ${x.p}명${x.open ? ' (진행중)' : ''}</span></div>`).join('')}</div>
     <div class="ycards">${rows.map(x => `<div class="yc${x.cur ? ' cur' : ''}"><small>${x.y}년 발령 · 사직율</small><b>${x.p}명</b><span>사직율 <em>${pct(x.rate)}</em>${x.cur && prev ? ` · <span class="${x.rate > prev.rate ? 'up' : 'dn'}">${x.rate > prev.rate ? '▲' : '▼'}${Math.abs((x.rate - prev.rate) * 100).toFixed(1)}%p vs ${prev.y}</span>` : ''}</span></div>`).join('')}</div>
   </section>`;
 }
@@ -851,7 +870,7 @@ function p1(){
     <button class="chip ghost" data-compact="1" id="t-compact" aria-pressed="${!!S.compact}">${S.compact ? '부서별 펼치기' : '소계만 보기'}</button></div>`;
   return `<div style="display:grid;gap:20px">
   <div class="kpis">
-    ${kpi('총 발령인원 (누적)', t.p, '명', cmp([[Y1 + '년', (pa(Y1).placed ?? '–') + '명'], [Y2 + '년', (pa(Y2).placed ?? '–') + '명']]))}
+    ${kpi(SB.y !== 'all' ? Y0 + '년 발령인원' : (YEARS.length > 1 ? '총 발령인원 (전체 연도)' : '총 발령인원 (누적)'), t.p, '명', cmp([[Y1 + '년', (pa(Y1).placed ?? '–') + '명'], [Y2 + '년', (pa(Y2).placed ?? '–') + '명']]))}
     ${kpi('발령 회차', sel.length, '회', `최근 ${latest.replaceAll('-', '.')} (${cLab(latest)})`)}
     ${kpi('현재 재직인원', t.p - t.r, '명', `사직 ${t.r}명 제외`)}
     ${kpi('사직율', pct(t.r / t.p), '', cmp([[Y1 + '년', pct(pa(Y1).rate)], [Y2 + '년', pct(pa(Y2).rate)]]))}
@@ -1323,6 +1342,7 @@ function calc(){
 function render(){
   navSync();
   if (!A) return;
+  setYear();
   stamp();
   filters();
   const v = document.getElementById('view');
