@@ -645,7 +645,7 @@ tfoot td,.gt tfoot td,.gt tfoot td:first-child{background:var(--row-tot);color:v
 .svq tr:not(.qsum)+tr.qsum td{border-top:2px solid var(--row-tot-bar)}
 /* 히트맵 색은 은은하게 (진한 하늘색 면적 축소) */
 .gtab td.heat{background:color-mix(in oklab,var(--c,var(--warm)) var(--p,0%),var(--surface))}
-.gtab td.heat.hi,.gtab td.heat.hi .sh{color:#fff!important}
+.gtab td.heat{color:var(--ink)}
 .svt td.heat{background:color-mix(in oklab,var(--accent) calc(var(--p,0%) * .6),var(--surface))}
 .dt td.prev{background:#fafafb}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .dt td.prev{background:transparent}}
@@ -927,7 +927,7 @@ function p1(){
   const gm = bcs.map(b => ({ c: b.c, v: gcols.map(g => gp(b.c, g)) }));
   const gmax = Math.max(1, ...gm.flatMap(r => r.v));
   const gtot = gcols.map((g, i) => gm.reduce((s, r) => s + r.v[i], 0));
-  const gcell = (v, rowTot) => { const p = Math.round(v / gmax * 80); return v ? `<td class="num heat${p > 45 ? ' hi' : ''}" style="--p:${p}%;--c:var(--warm)">${v}명<small class="sh">${pct(v / Math.max(1, rowTot), 0)}</small></td>` : `<td class="num zero">0명</td>`; };
+  const gcell = (v, rowTot) => { const p = Math.round(v / gmax * 40); return v ? `<td class="num heat" style="--p:${p}%;--c:var(--warm)">${v}명<small class="sh">${pct(v / Math.max(1, rowTot), 0)}</small></td>` : `<td class="num zero">0명</td>`; };
   const grpTable = `<div class="tw"><table class="gt gtab"><thead><tr><th>회차</th>${gcols.map(g => `<th class="num">${g}</th>`).join('')}<th class="num">합계</th></tr></thead><tbody>
     ${gm.map(r => { const rt = r.v.reduce((s, x) => s + x, 0); return `<tr><td><b>${cLab(r.c)}</b> <span class="zero">${cShort(r.c)}</span></td>${r.v.map(v => gcell(v, rt)).join('')}<td class="num"><b>${rt}명</b></td></tr>`; }).join('')}
     </tbody><tfoot><tr><td>합계</td>${gtot.map(v => `<td class="num">${v}명<small class="sh">${pct(v / Math.max(1, t.p), 0)}</small></td>`).join('')}<td class="num">${t.p}명</td></tr></tfoot></table></div>`;
