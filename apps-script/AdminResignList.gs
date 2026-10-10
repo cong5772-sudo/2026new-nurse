@@ -234,10 +234,21 @@ td b{font-weight:700}.muted{color:var(--muted)}.tw{overflow-x:auto}
 .tb{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;font-size:12.5px}
 .tbb{display:flex;gap:6px;flex-wrap:wrap}
 a.btn.sm,button.btn.sm{height:30px;padding:0 12px;font-size:12.5px}
-tr.fr th{background:#fff;padding:4px 5px;border-bottom:1px solid var(--line2)}
-tr.fr select,tr.fr input{height:28px;width:100%;min-width:64px;font-size:12px;padding:0 6px;border-radius:6px}
-tr.fr select.on{border-color:var(--accent);color:var(--accent);font-weight:600}
-th.fon{color:var(--accent)}
+.hb{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:2px 4px;border-radius:6px}.hb:hover{background:#e8eef9}
+.hb .ar{font-size:10px;color:var(--muted);display:inline-flex;align-items:center;gap:2px}
+th.fon .hb{color:var(--accent)}th.fon .ar{color:var(--accent)}
+.fdot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.pop{position:absolute;z-index:20;width:240px;background:#fff;border:1px solid var(--line2);border-radius:10px;box-shadow:0 10px 28px rgba(15,23,42,.18);padding:6px;font-size:13px}
+.pop .pi{all:unset;display:block;width:100%;box-sizing:border-box;padding:7px 10px;border-radius:6px;cursor:pointer}.pop .pi:hover{background:var(--soft);color:var(--accent)}
+.pop .psep{height:1px;background:var(--line);margin:6px 0}
+.pop .ph{font-size:12px;font-weight:600;color:var(--ink2);padding:2px 6px 6px}
+.pop .ps{width:100%;height:30px;font-size:12.5px;margin-bottom:6px}
+.pop .pa{display:block;padding:4px 6px;font-weight:600;border-bottom:1px solid var(--line)}
+.pop .pl{max-height:220px;overflow:auto;padding:4px 0}.pop .pl label{display:block;padding:3px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}.pop .pl label:hover{background:#f4f6fa}
+.pop input[type=checkbox]{width:14px;height:14px;margin:0 6px 0 0;vertical-align:-2px}
+.pop .pf{display:flex;gap:6px;justify-content:flex-end;padding-top:6px;border-top:1px solid var(--line);margin-top:4px}
+button.btn.ghost{border-color:var(--line2);color:var(--ink2)}
+@media print{.hb .ar{display:none}.pop{display:none}}
 .ptitle{display:none}
 #notice{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}#notice.show{opacity:1}
 @media print{.ptitle{display:block;margin:0 0 6px;font-size:10pt;font-weight:600}.tw{overflow:visible!important}#notice{display:none}}
@@ -384,49 +395,97 @@ function makeXlsx(aoa, sheetName) {
   e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, size, true); e.setUint32(16, off, true);
   return new Blob(parts.concat(cent, [new Uint8Array(e.buffer)]), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
-const BLANK = '∅';
+const BLANK = '(빈칸)';
 const KIT = {
-  cf: {},
-  // 열마다 고를 값 목록을 만들고(필터 전 목록 기준), 열 필터를 적용한 목록을 돌려준다
+  cf: {},        // 열 번호 → 보이게 둘 값 목록 (없으면 전체)
+  sort: null,    // { i: 열 번호, dir: 1 오름차순 / -1 내림차순 }
+  cmp(c, a, b) {
+    const x = c.x ? c.x(a) : c.v(a), y = c.x ? c.x(b) : c.v(b);
+    if (typeof x === 'number' && typeof y === 'number') return x - y;
+    if (x === '' && y !== '') return 1; if (y === '' && x !== '') return -1;   // 빈칸은 항상 맨 뒤
+    return String(x).localeCompare(String(y), 'ko', { numeric: true });
+  },
+  // 열마다 고를 값 목록을 만들고(열 필터 적용 전 기준), 열 필터를 적용한 목록을 돌려준다
   prep(C, pre) {
     C.forEach(c => {
-      c.vals = [...new Set(pre.map(r => c.v(r)))].sort((a, b) => a.localeCompare(b, 'ko', { numeric: true }));
-      c.many = c.vals.length > 30;
+      const vs = [...new Set(pre.map(r => c.v(r)))];
+      c.vals = vs.sort((a, b) => a === '' ? 1 : b === '' ? -1 : (c.x ? 0 : a.localeCompare(b, 'ko', { numeric: true })));
+      if (c.x) c.vals = vs.sort((a, b) => a === '' ? 1 : b === '' ? -1 : (+a) - (+b));
     });
-    return pre.filter(r => C.every((c, i) => {
-      const f = KIT.cf[i]; if (!f) return true;
-      const v = c.v(r);
-      return c.many ? v.toLowerCase().includes(f.toLowerCase()) : f === BLANK ? v === '' : v === f;
-    }));
+    return pre.filter(r => C.every((c, i) => !KIT.cf[i] || KIT.cf[i].includes(c.v(r))));
   },
   cfLabel(C) {
-    const n = Object.keys(KIT.cf).filter(i => KIT.cf[i]).length;
-    return n ? ' · 열 필터 ' + n + '개' : '';
+    const n = Object.keys(KIT.cf).length;
+    return (n ? ' · 열 필터 ' + n + '개' : '') + (KIT.sort ? ' · ' + C[KIT.sort.i].h + (KIT.sort.dir > 0 ? ' 오름차순' : ' 내림차순') : '');
   },
   toolbar(n) {
-    const on = Object.keys(KIT.cf).some(i => KIT.cf[i]);
-    return '<div class="tb noprint"><span class="muted">각 열 제목 아래 칸에서 값을 고르면 표를 거를 수 있습니다 · ' + n + '명</span><span class="tbb">'
-      + (on ? '<button class="btn sm" data-act="reset">열 필터 초기화</button>' : '')
+    const on = Object.keys(KIT.cf).length || KIT.sort;
+    return '<div class="tb noprint"><span class="muted">열 제목을 누르면 엑셀처럼 정렬·필터를 할 수 있습니다 · ' + n + '명</span><span class="tbb">'
+      + (on ? '<button class="btn sm" data-act="reset">정렬·필터 해제</button>' : '')
       + '<button class="btn sm" data-act="xlsx">엑셀 다운로드</button><button class="btn sm" data-act="print">인쇄</button><button class="btn sm" data-act="pdf">PDF 저장</button></span></div>'
       + '<p class="ptitle">' + esc(document.title) + ' · ' + esc(KIT.cond) + ' · ' + n + '명 · 출력 ' + new Date().toLocaleDateString('ko-KR') + '</p>';
   },
   table(C, list, groups, empty) {
-    const head = '<tr>' + C.map((c, i) => '<th class="' + (c.l ? 'l' : '') + (KIT.cf[i] ? ' fon' : '') + '">' + esc(c.h) + '</th>').join('') + '</tr>'
-      + '<tr class="fr noprint">' + C.map((c, i) => {
-        const f = KIT.cf[i] || '';
-        return '<th>' + (c.many
-          ? '<input data-cf="' + i + '" placeholder="포함 검색" value="' + esc(f) + '">'
-          : '<select data-cf="' + i + '"' + (f ? ' class="on"' : '') + '><option value="">전체</option>' + c.vals.map(v => { const val = v === '' ? BLANK : v; return '<option value="' + esc(val) + '"' + (val === f ? ' selected' : '') + '>' + esc(v === '' ? '(빈칸)' : v) + '</option>'; }).join('') + '</select>') + '</th>';
-      }).join('') + '</tr>';
+    // 정렬 중이면 묶음 없이 한 목록으로
+    if (KIT.sort) {
+      const c = C[KIT.sort.i], d = KIT.sort.dir;
+      groups = [{ label: '', rows: list.slice().sort((a, b) => { const x = c.v(a), y = c.v(b); if (x === '' || y === '') return x === y ? 0 : x === '' ? 1 : -1; return d * KIT.cmp(c, a, b); }) }];
+    }
+    KIT.shown = groups.reduce((a, g) => a.concat(g.rows), []);
+    const head = '<tr>' + C.map((c, i) => {
+      const s = KIT.sort && KIT.sort.i === i ? (KIT.sort.dir > 0 ? '▲' : '▼') : '';
+      return '<th class="' + (c.l ? 'l' : '') + (KIT.cf[i] || s ? ' fon' : '') + '"><button class="hb" data-col="' + i + '" title="정렬·필터">' + esc(c.h)
+        + '<span class="ar">' + (s || '▾') + (KIT.cf[i] ? '<i class="fdot"></i>' : '') + '</span></button></th>';
+    }).join('') + '</tr>';
     const cell = (c, r) => { const v = c.html ? c.html(r) : (c.b ? '<b>' + esc(c.v(r)) + '</b>' : esc(c.v(r))); return '<td' + (c.l ? ' class="l"' : '') + '>' + v + '</td>'; };
-    const body = list.length ? groups.map(g => '<tr class="mh"><td colspan="' + C.length + '">' + esc(g.label) + '</td></tr>'
+    const body = list.length ? groups.map(g => (g.label ? '<tr class="mh"><td colspan="' + C.length + '">' + esc(g.label) + '</td></tr>' : '')
       + g.rows.map(r => '<tr' + (KIT.rowClass && KIT.rowClass(r) ? ' class="' + KIT.rowClass(r) + '"' : '') + '>' + C.map(c => cell(c, r)).join('') + '</tr>').join('')).join('')
       : '<tr><td colspan="' + C.length + '" class="empty">' + empty + '</td></tr>';
     return '<table><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
   },
-  // 지금 표에 보이는 행·열 그대로 엑셀(.xlsx)로 저장
+  // 열 제목을 눌렀을 때 뜨는 메뉴: 정렬 + 값 체크 필터
+  openPop(i, btn) {
+    KIT.closePop();
+    const c = KIT.cols[i], sel = KIT.cf[i];
+    const pop = document.createElement('div');
+    pop.id = 'pop'; pop.className = 'pop'; pop.dataset.col = i;
+    pop.innerHTML = '<button class="pi" data-p="asc">↑ 오름차순 정렬</button><button class="pi" data-p="desc">↓ 내림차순 정렬</button>'
+      + (KIT.sort && KIT.sort.i === i ? '<button class="pi" data-p="nosort">정렬 해제</button>' : '')
+      + '<div class="psep"></div><div class="ph">' + esc(c.h) + ' 필터</div><input class="ps" placeholder="값 검색">'
+      + '<label class="pa"><input type="checkbox" class="pall"' + (sel ? '' : ' checked') + '> (모두 선택)</label>'
+      + '<div class="pl">' + c.vals.map(v => '<label><input type="checkbox" value="' + esc(v) + '"' + (!sel || sel.includes(v) ? ' checked' : '') + '> ' + esc(v === '' ? BLANK : v) + '</label>').join('') + '</div>'
+      + '<div class="pf"><button class="btn sm" data-p="ok">확인</button><button class="btn sm ghost" data-p="cancel">취소</button></div>';
+    document.body.appendChild(pop);
+    const r = btn.getBoundingClientRect(), w = pop.offsetWidth;
+    pop.style.top = (r.bottom + window.scrollY + 4) + 'px';
+    pop.style.left = Math.max(8, Math.min(r.left + window.scrollX, window.scrollX + document.documentElement.clientWidth - w - 8)) + 'px';
+    pop.addEventListener('click', e => {
+      const b = e.target.closest('[data-p]'); if (!b) return;
+      const p = b.dataset.p;
+      if (p === 'asc' || p === 'desc') KIT.sort = { i: i, dir: p === 'asc' ? 1 : -1 };
+      else if (p === 'nosort') KIT.sort = null;
+      else if (p === 'ok') {
+        const boxes = [...pop.querySelectorAll('.pl input')], on = boxes.filter(x => x.checked).map(x => x.value);
+        if (on.length === boxes.length) delete KIT.cf[i]; else KIT.cf[i] = on;
+      }
+      KIT.closePop(); if (p !== 'cancel') KIT.draw();
+    });
+    pop.addEventListener('input', e => {
+      if (e.target.classList.contains('ps')) {
+        const q = e.target.value.trim().toLowerCase();
+        pop.querySelectorAll('.pl label').forEach(l => { l.style.display = !q || l.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+      }
+    });
+    pop.addEventListener('change', e => {
+      if (e.target.classList.contains('pall')) pop.querySelectorAll('.pl label').forEach(l => { if (l.style.display !== 'none') l.querySelector('input').checked = e.target.checked; });
+      else if (e.target.closest('.pl')) { const all = [...pop.querySelectorAll('.pl input')]; pop.querySelector('.pall').checked = all.every(x => x.checked); }
+    });
+    pop.querySelector('.ps').focus();
+  },
+  closePop() { const p = document.getElementById('pop'); if (p) p.remove(); },
+  // 지금 표에 보이는 순서·행·열 그대로 엑셀(.xlsx)로 저장
   xlsx() {
-    const C = KIT.cols, list = KIT.list;
+    const C = KIT.cols, list = KIT.shown || KIT.list;
     const aoa = [C.map(c => c.h)].concat(list.map(r => C.map(c => c.x ? c.x(r) : c.v(r))));
     const day = new Date(), ymd = day.getFullYear() + String(day.getMonth() + 1).padStart(2, '0') + String(day.getDate()).padStart(2, '0');
     const name = KIT.title + '_' + ymd;
@@ -448,23 +507,21 @@ const KIT = {
   },
   start() {
     app.addEventListener('click', e => {
+      const hb = e.target.closest('[data-col]');
+      if (hb) { const i = +hb.dataset.col, open = document.getElementById('pop'); if (open && +open.dataset.col === i) KIT.closePop(); else KIT.openPop(i, hb); return; }
       const ch = e.target.closest('[data-k]');
       if (ch) { KIT.onChip(ch.dataset.k, ch.dataset.v); KIT.cf = {}; KIT.draw(); return; }
       const b = e.target.closest('[data-act]'); if (!b) return;
       const act = b.dataset.act;
-      if (act === 'reset') { KIT.cf = {}; KIT.draw(); }
+      if (act === 'reset') { KIT.cf = {}; KIT.sort = null; KIT.draw(); }
       else if (act === 'xlsx') KIT.xlsx();
       else if (act === 'print') window.print();
       else if (act === 'pdf') { KIT.notice('인쇄 창의 "대상(프린터)"에서 "PDF로 저장"을 고른 뒤 저장을 누르세요.'); setTimeout(() => window.print(), 600); }
     });
-    app.addEventListener('change', e => {
-      if (e.target.id === 'd') { KIT.onDept(e.target.value); KIT.cf = {}; KIT.draw(); }
-      else if (e.target.matches('select[data-cf]')) { KIT.cf[e.target.dataset.cf] = e.target.value; KIT.draw(); }
-    });
-    app.addEventListener('input', e => {
-      if (e.target.id === 'q') { KIT.onSearch(e.target.value); KIT.redraw('#q'); }
-      else if (e.target.matches('input[data-cf]')) { KIT.cf[e.target.dataset.cf] = e.target.value; KIT.redraw('input[data-cf="' + e.target.dataset.cf + '"]'); }
-    });
+    document.addEventListener('mousedown', e => { const p = document.getElementById('pop'); if (p && !p.contains(e.target) && !e.target.closest('[data-col]')) KIT.closePop(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') KIT.closePop(); });
+    app.addEventListener('change', e => { if (e.target.id === 'd') { KIT.onDept(e.target.value); KIT.cf = {}; KIT.draw(); } });
+    app.addEventListener('input', e => { if (e.target.id === 'q') { KIT.onSearch(e.target.value); KIT.redraw('#q'); } });
     KIT.draw();
   },
 };
