@@ -148,7 +148,7 @@ ${adminCss_()}
 .vt{display:flex;gap:4px;background:#eef2f8;border-radius:10px;padding:3px}.vt a{padding:6px 14px;border-radius:8px;color:var(--ink2);text-decoration:none;font-weight:600;font-size:13px}.vt a.on{background:#fff;color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.08)}
 </style></head><body>
 <header><h1><i>+</i>${ADMIN.TITLE} <span class="tag">관리자 전용 · 외부 공유 금지</span></h1>${viewTabs_(self, 'resign')}
-<div class="hr"><span id="who"></span><span id="gen"></span><button class="btn" onclick="window.print()">인쇄 · PDF</button><a class="btn" id="dash" target="_blank" rel="noopener">대시보드</a></div></header>
+<div class="hr"><a class="btn home" id="dash" target="_top">← 메인 대시보드</a><span id="who"></span><span id="gen"></span><button class="btn" onclick="window.print()">인쇄 · PDF</button></div></header>
 <main id="app"></main>
 <script>
 const P = ${json};
@@ -210,6 +210,8 @@ header h1{margin:0;font-size:18px;display:flex;align-items:center;gap:10px}heade
 .tag{display:inline-block;padding:2px 9px;border-radius:999px;background:#fdecec;color:var(--crit);font-size:11.5px;font-weight:600}
 .hr{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
 a.btn,button.btn{height:34px;padding:0 14px;border-radius:8px;border:1px solid var(--accent);background:#fff;color:var(--accent);font:600 13px "S-Core Dream",sans-serif;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
+a.btn.home{background:var(--accent);color:#fff}a.btn.home:hover{filter:brightness(1.08)}
+@media print{a.btn.home{display:none}}
 main{padding:20px 22px;display:grid;gap:16px;max-width:1400px}
 .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px}
 .filters{display:flex;flex-wrap:wrap;gap:12px 22px;align-items:center}
@@ -241,11 +243,11 @@ function placedPage_(data, err, who, self) {
 <style>
 ${adminCss_()}
 .vt{display:flex;gap:4px;background:#eef2f8;border-radius:10px;padding:3px}.vt a{padding:6px 14px;border-radius:8px;color:var(--ink2);text-decoration:none;font-weight:600;font-size:13px}.vt a.on{background:#fff;color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.08)}
-.st{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap}.st.on{background:#e7f6ec;color:#15803d}.st.off{background:#fdecec;color:var(--crit)}
-tr.off td{color:var(--muted)}tr.off td b{color:var(--ink2)}
+.st{white-space:nowrap}.st.on{color:#3f7d5a}.st.off{color:#b0645f}
+tr.off td{color:var(--ink2)}
 </style></head><body>
 <header><h1><i>+</i>${ADMIN.PLACED_TITLE} <span class="tag">관리자 전용 · 외부 공유 금지</span></h1>${viewTabs_(self, 'placed')}
-<div class="hr"><span id="who"></span><span id="gen"></span><button class="btn" onclick="window.print()">인쇄 · PDF</button><a class="btn" id="dash" target="_blank" rel="noopener">대시보드</a></div></header>
+<div class="hr"><a class="btn home" id="dash" target="_top">← 메인 대시보드</a><span id="who"></span><span id="gen"></span><button class="btn" onclick="window.print()">인쇄 · PDF</button></div></header>
 <main id="app"></main>
 <script>
 const P = ${json};
@@ -285,7 +287,7 @@ if (P.err || !P.data) {
       + Object.keys(by).sort().reverse().map(s => '<tr class="mh"><td colspan="' + (9 + cols.length) + '">' + cl(s) + ' · ' + by[s].length + '명</td></tr>' + by[s].map(r =>
           '<tr' + (r.end ? ' class="off"' : '') + '><td>' + esc(r.cohort) + '</td><td>' + md(r.start) + '</td><td class="l"><b>' + esc(r.dept) + '</b></td><td>' + esc(r.group) + '</td><td class="l"><b>' + esc(r.name) + '</b></td><td>' + esc(r.gender) + '</td>'
           + r.x.map(v => '<td>' + esc(v) + '</td>').join('')
-          + '<td>' + (r.end ? '<span class="st off">사직 ' + md(r.end) + '</span>' : '<span class="st on">재직</span>') + '</td><td>' + r.days + '일</td><td class="l">' + esc(r.reason) + '</td></tr>').join('')).join('')
+          + '<td>' + (r.end ? '<span class="st off">' + r.end.replace(/-/g, '.') + ' 사직</span>' : '<span class="st on">재직</span>') + '</td><td>' + r.days + '일</td><td class="l">' + esc(r.reason) + '</td></tr>').join('')).join('')
       + '</tbody></table>' : '<div class="empty">조건에 맞는 발령자가 없습니다.</div>') + '</div>';
   }
   app.addEventListener('click', e => {
