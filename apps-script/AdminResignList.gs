@@ -154,7 +154,7 @@ ${adminCss_()}
 const P = ${json};
 ${tableKit_()}
 if (P.err || !P.data) {
-  showErr();
+  renderErr();
 } else {
   document.getElementById('gen').textContent = '조회 ' + P.data.generated;
   const rows = P.data.rows;
@@ -239,8 +239,8 @@ tr.fr select,tr.fr input{height:28px;width:100%;min-width:64px;font-size:12px;pa
 tr.fr select.on{border-color:var(--accent);color:var(--accent);font-weight:600}
 th.fon{color:var(--accent)}
 .ptitle{display:none}
-#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}#toast.show{opacity:1}
-@media print{.ptitle{display:block;margin:0 0 6px;font-size:10pt;font-weight:600}.tw{overflow:visible!important}#toast{display:none}}
+#notice{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}#notice.show{opacity:1}
+@media print{.ptitle{display:block;margin:0 0 6px;font-size:10pt;font-weight:600}.tw{overflow:visible!important}#notice{display:none}}
 @media print{@page{size:A4 portrait;margin:12mm}body{background:#fff}header .hr,.filters,.noprint{display:none!important}.card{border:0;padding:0}main{padding:0}th,td{padding:4px 6px;font-size:9pt;border:.5pt solid #9aa3b2}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 `;
 }
@@ -269,7 +269,7 @@ tr.off td{color:var(--ink2)}
 const P = ${json};
 ${tableKit_()}
 if (P.err || !P.data) {
-  showErr();
+  renderErr();
 } else {
   document.getElementById('gen').textContent = '조회 ' + P.data.generated;
   const rows = P.data.rows, cols = P.data.cols, coh = P.data.cohorts;
@@ -327,7 +327,7 @@ const dot = s => s ? s.replace(/-/g, '.') : '';
 const app = document.getElementById('app');
 document.getElementById('dash').href = P.dash;
 document.getElementById('who').textContent = P.who ? '접속 계정: ' + P.who : '';
-function showErr() {
+function renderErr() {
   app.innerHTML = '<div class="card err"><b>명단을 볼 수 없습니다.</b><p>이 페이지는 원본 구글 시트(신규간호사 명단)에 접근 권한이 있는 계정으로만 열 수 있습니다.' + (P.who ? ' 현재 계정: <b>' + esc(P.who) + '</b>' : '') + '</p><p class="muted">' + esc(P.err) + '</p></div>';
 }
 function groupsOf(rows) {
@@ -435,9 +435,9 @@ const KIT = {
     a.download = name + '.xlsx'; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   },
-  toast(msg) {
-    let t = document.getElementById('toast');
-    if (!t) { t = document.createElement('div'); t.id = 'toast'; document.body.appendChild(t); }
+  notice(msg) {
+    let t = document.getElementById('notice');
+    if (!t) { t = document.createElement('div'); t.id = 'notice'; document.body.appendChild(t); }
     t.textContent = msg; t.className = 'show';
     clearTimeout(KIT.tt); KIT.tt = setTimeout(() => { t.className = ''; }, 4000);
   },
@@ -455,7 +455,7 @@ const KIT = {
       if (act === 'reset') { KIT.cf = {}; KIT.draw(); }
       else if (act === 'xlsx') KIT.xlsx();
       else if (act === 'print') window.print();
-      else if (act === 'pdf') { KIT.toast('인쇄 창의 "대상(프린터)"에서 "PDF로 저장"을 고른 뒤 저장을 누르세요.'); setTimeout(() => window.print(), 600); }
+      else if (act === 'pdf') { KIT.notice('인쇄 창의 "대상(프린터)"에서 "PDF로 저장"을 고른 뒤 저장을 누르세요.'); setTimeout(() => window.print(), 600); }
     });
     app.addEventListener('change', e => {
       if (e.target.id === 'd') { KIT.onDept(e.target.value); KIT.cf = {}; KIT.draw(); }
