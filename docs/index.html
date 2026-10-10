@@ -613,23 +613,29 @@ svg text{font-family:var(--f-ui)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 /* ===== 표 행 색 구분 (그룹 머리행 · 소계 · 합계) + 바탕 중립화 ===== */
 :root{
-  --row-hd:#f4f4f5; --row-hover:#f6f7f9;
+  --row-hd:#2f4a78; --row-hd-ink:#ffffff; --row-hd-line:#3f5b8a; --row-hover:#f6f7f9;
   --row-gh:#f3ece0; --row-gh-ink:#7a541a; --row-gh-bar:#c9974a;
-  --row-sub:#fbf8f3; --row-tot:#e8ebf0; --row-tot-ink:#111827; --row-tot-bar:#475569;
+  --row-sub:#fbf8f3; --row-tot:#dfe7f3; --row-tot-ink:#1f3a68; --row-tot-bar:#2f4a78;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --row-hd:#0f1626; --row-hover:#18223a;
+    --row-hd:#1d3566; --row-hd-ink:#ffffff; --row-hd-line:#2b4578; --row-hover:#18223a;
     --row-gh:#2a2416; --row-gh-ink:#e8c47f; --row-gh-bar:#b8893c;
-    --row-sub:#161c2b; --row-tot:#1d2638; --row-tot-ink:#e8edf6; --row-tot-bar:#8a96aa;
+    --row-sub:#161c2b; --row-tot:#1a2b4d; --row-tot-ink:#e8edf6; --row-tot-bar:#60a5fa;
   }
 }
 :root[data-theme="dark"]{
-  --row-hd:#0f1626; --row-hover:#18223a;
+  --row-hd:#1d3566; --row-hd-ink:#ffffff; --row-hd-line:#2b4578; --row-hover:#18223a;
   --row-gh:#2a2416; --row-gh-ink:#e8c47f; --row-gh-bar:#b8893c;
-  --row-sub:#161c2b; --row-tot:#1d2638; --row-tot-ink:#e8edf6; --row-tot-bar:#8a96aa;
+  --row-sub:#161c2b; --row-tot:#1a2b4d; --row-tot-ink:#e8edf6; --row-tot-bar:#60a5fa;
 }
-thead th{background:var(--row-hd);color:var(--ink2)}
+/* 표 머리행(열 제목)·합계행: 남색 계열로 통일 */
+thead th,thead th:first-child,.gt thead th:first-child,.dt .band th,.dt2 .band th,.dt th.prevband,.dt .band th.prevband{background:var(--row-hd);color:var(--row-hd-ink);border-bottom:1px solid var(--row-hd-line)}
+thead th .ar,thead th .d,thead th small{color:rgba(255,255,255,.75)}
+thead th.sort:hover{color:#fff;text-decoration:underline}
+.gt thead th.coh{color:#cfe0ff}
+thead th .d,thead th .zero,.dt2 thead th .d{color:rgba(255,255,255,.72)}
+.dt2 thead th.y6h{color:#fff}
 tbody tr:hover td{background:var(--row-hover)}
 tfoot td,.gt tfoot td,.gt tfoot td:first-child{background:var(--row-tot);color:var(--row-tot-ink);font-weight:700;border-top:2px solid var(--row-tot-bar)}
 .gt tr.gh td,.gt tr.gh td:first-child,tr.gh td{background:var(--row-gh);color:var(--row-gh-ink);font-weight:700;box-shadow:inset 3px 0 0 var(--row-gh-bar)}
@@ -640,19 +646,18 @@ tfoot td,.gt tfoot td,.gt tfoot td:first-child{background:var(--row-tot);color:v
 /* 히트맵 색은 은은하게 (진한 하늘색 면적 축소) */
 .gtab td.heat{background:color-mix(in oklab,var(--seq) calc(var(--p,0%) * .55),var(--surface))}
 .svt td.heat{background:color-mix(in oklab,var(--accent) calc(var(--p,0%) * .6),var(--surface))}
-.dt th.prevband,.dt .band th.prevband{background:var(--row-hd)}
 .dt td.prev{background:#fafafb}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .dt td.prev{background:transparent}}
 :root[data-theme="dark"] .dt td.prev{background:transparent}
 .head{box-shadow:0 10px 10px -12px rgba(17,24,39,.18)}
-.svnote{background:var(--row-hd)}
+.svnote{background:var(--sunk)}
 /* 교육과정 만족도: 4.5 미만 강조 · 선택 회차 열 박스 · 출력 */
 .svt td.heat{background:transparent;color:var(--ink);font-weight:600}
 .svt td[data-low]{background:color-mix(in oklab,var(--crit) 12%,var(--surface));color:var(--crit-ink)}
 .svt td[data-low] b{color:var(--crit-ink)}
 .lowkey{display:inline-block;padding:0 6px;border-radius:5px;background:color-mix(in oklab,var(--crit) 12%,var(--surface));color:var(--crit-ink);font-weight:700}
 .svt td.cur{outline:0;box-shadow:inset 2px 0 0 var(--accent),inset -2px 0 0 var(--accent)}
-.svt th.cur{color:var(--accent);box-shadow:inset 2px 0 0 var(--accent),inset -2px 0 0 var(--accent),inset 0 2px 0 var(--accent)}
+.svt th.cur{color:#fff;background:var(--accent);box-shadow:none}
 .svt tbody tr:last-child td.cur{box-shadow:inset 2px 0 0 var(--accent),inset -2px 0 0 var(--accent),inset 0 -2px 0 var(--accent)}
 .svbtns{display:flex;gap:8px;flex-wrap:wrap}
 .prbtn{border:1px solid var(--line2);background:var(--surface);color:var(--ink);cursor:pointer;font-family:inherit}
