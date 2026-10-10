@@ -281,8 +281,8 @@ b.rd{color:var(--crit-ink)}
 .ct .rdx{color:var(--crit-ink);font-weight:600}
 /* ===== 좌측 메뉴·조회조건 레이아웃 (남색·파랑 톤) ===== */
 :root{
-  --bg:#f3f5f9; --surface:#ffffff; --sunk:#f4f6fa; --ink:#111827; --ink2:#4b5563; --muted:#6b7280;
-  --line:#e6eaf1; --line2:#d5dbe5; --accent:#2563eb; --accent-ink:#ffffff; --accent-soft:#e8efff;
+  --bg:#fafafa; --surface:#ffffff; --sunk:#f4f4f5; --ink:#111827; --ink2:#4b5563; --muted:#6b7280;
+  --line:#e7e7ea; --line2:#d4d4d8; --accent:#2563eb; --accent-ink:#ffffff; --accent-soft:#eef2fb;
   --s1:#2563eb; --s2:#f59e0b; --s3:#10b981; --seq:#2563eb; --warm:#f59e0b;
   --navy:#1f3a68; --navy2:#2a4b85;
 }
@@ -503,9 +503,9 @@ body,button,input,select{font-family:var(--f-ui)}
   body.printing .dt2 thead .band th{background:#dfe5ef!important}
   body.printing .dt2 th .d{color:#444;font-weight:400}
   body.printing .dt2 td:first-child,body.printing .dt2 th:first-child{text-align:left!important;padding-left:2mm!important;width:13%}
-  body.printing .dt2 tr.gh td{background:#f3f5f9!important;font-weight:700;text-align:left!important;color:#1f3a68}
+  body.printing .dt2 tr.gh td{background:#f3ece0!important;font-weight:700;text-align:left!important;color:#7a541a}
   body.printing .dt2 tr.sub td{background:#fafbfc!important;font-weight:700}
-  body.printing .dt2 tfoot td{background:#e9edf4!important;font-weight:700;border-top:1.2pt solid #333!important}
+  body.printing .dt2 tfoot td{background:#e8ebf0!important;font-weight:700;border-top:1.2pt solid #333!important}
   body.printing .dt2 td b,body.printing .dt2 td.y6 b{font-size:8.6pt!important}
   body.printing .dt2 .dl{display:none!important}
   body.printing .dt2 th .d{display:block;font-size:7.5pt;font-weight:400}
@@ -611,6 +611,41 @@ svg text{font-family:var(--f-ui)}
 .svnote{white-space:pre-line;font-size:13px;line-height:1.7;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--sunk)}
 @media (max-width:820px){.svnotes{grid-template-columns:1fr}.svtr{grid-template-columns:5.5rem 2.8rem minmax(0,1fr) 3rem}.upbtn{width:100%;justify-content:center}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* ===== 표 행 색 구분 (그룹 머리행 · 소계 · 합계) + 바탕 중립화 ===== */
+:root{
+  --row-hd:#f4f4f5; --row-hover:#f6f7f9;
+  --row-gh:#f3ece0; --row-gh-ink:#7a541a; --row-gh-bar:#c9974a;
+  --row-sub:#fbf8f3; --row-tot:#e8ebf0; --row-tot-ink:#111827; --row-tot-bar:#475569;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --row-hd:#0f1626; --row-hover:#18223a;
+    --row-gh:#2a2416; --row-gh-ink:#e8c47f; --row-gh-bar:#b8893c;
+    --row-sub:#161c2b; --row-tot:#1d2638; --row-tot-ink:#e8edf6; --row-tot-bar:#8a96aa;
+  }
+}
+:root[data-theme="dark"]{
+  --row-hd:#0f1626; --row-hover:#18223a;
+  --row-gh:#2a2416; --row-gh-ink:#e8c47f; --row-gh-bar:#b8893c;
+  --row-sub:#161c2b; --row-tot:#1d2638; --row-tot-ink:#e8edf6; --row-tot-bar:#8a96aa;
+}
+thead th{background:var(--row-hd);color:var(--ink2)}
+tbody tr:hover td{background:var(--row-hover)}
+tfoot td,.gt tfoot td,.gt tfoot td:first-child{background:var(--row-tot);color:var(--row-tot-ink);font-weight:700;border-top:2px solid var(--row-tot-bar)}
+.gt tr.gh td,.gt tr.gh td:first-child,tr.gh td{background:var(--row-gh);color:var(--row-gh-ink);font-weight:700;box-shadow:inset 3px 0 0 var(--row-gh-bar)}
+.gt tr.sub td,.gt tr.sub td:first-child,tr.sub td{background:var(--row-sub);font-weight:700;border-top:1px dashed var(--line2)}
+.gt tr.gh:hover td{background:var(--row-gh)}.gt tr.sub:hover td{background:var(--row-sub)}tfoot tr:hover td{background:var(--row-tot)}
+.svq tr.qsum td{background:var(--row-sub);border-top:1.5px solid var(--line2)}
+.svq tr:not(.qsum)+tr.qsum td{border-top:2px solid var(--row-tot-bar)}
+/* 히트맵 색은 은은하게 (진한 하늘색 면적 축소) */
+.gtab td.heat{background:color-mix(in oklab,var(--seq) calc(var(--p,0%) * .55),var(--surface))}
+.svt td.heat{background:color-mix(in oklab,var(--accent) calc(var(--p,0%) * .6),var(--surface))}
+.dt th.prevband,.dt .band th.prevband{background:var(--row-hd)}
+.dt td.prev{background:#fafafb}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .dt td.prev{background:transparent}}
+:root[data-theme="dark"] .dt td.prev{background:transparent}
+.head{box-shadow:0 10px 10px -12px rgba(17,24,39,.18)}
+.svnote{background:var(--row-hd)}
 </style>
 </head>
 <body>
