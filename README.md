@@ -3,7 +3,7 @@
 해운대백병원 간호국 신규간호사 발령·사직 현황 대시보드입니다.
 구글 시트의 연도별 명단 탭(**[26신규명단]**, 내년부터 **[27신규명단]** …)을 원본으로 하며, PC와 휴대폰 어디서나 같은 주소로 볼 수 있습니다.
 
-- 대시보드 주소: **https://2026new-nurse.vercel.app/** (Vercel, `main`에 올리면 자동 배포 · `vercel.json`이 `docs` 폴더를 사이트로 지정)
+- 대시보드 주소: **https://haeundae-newnurse.vercel.app/** (이전 주소 https://2026new-nurse.vercel.app/ 도 계속 열림) (Vercel, `main`에 올리면 자동 배포 · `vercel.json`이 `docs` 폴더를 사이트로 지정)
 - 예비 주소: https://cong5772-sudo.github.io/haeundae-newnurse/ (GitHub Pages)
 - 저장소: `cong5772-sudo/haeundae-newnurse` (2026-10-10 `2026new-nurse`에서 이름 변경)
 

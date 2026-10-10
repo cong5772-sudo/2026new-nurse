@@ -18,7 +18,7 @@ const ADMIN = {
   PLACED_TITLE: '신규간호사 발령 명단',
   // 발령 명단에 함께 보여줄 열 (시트에 있는 것만 표시, 나머지 열은 뒤에 자동으로 붙음)
   PLACED_COLS: ['사원번호', '생년월일', '출신학교', '석차백분율', 'AI역량검사평가'],
-  DASHBOARD_URL: 'https://2026new-nurse.vercel.app/#p2',
+  DASHBOARD_URL: 'https://haeundae-newnurse.vercel.app/#p2',
   GROUPS: [
     ['일반병동', ['12A', '12B', '11B', '10A', '10B', '8A', '8B', '7B', '6A']],
     ['통합병동', ['14A', '14B', '13A', '13B', '11A', '9A', '9B', '7A']],
