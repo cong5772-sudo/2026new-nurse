@@ -518,12 +518,14 @@ body,button,input,select{font-family:var(--f-ui)}
 .adminbtn{display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);font-size:12.5px;font-weight:600;text-decoration:none;white-space:nowrap}
 .adminbtn:hover{background:var(--accent);color:#fff}
 .navadmin{display:flex;align-items:center;gap:10px;margin:6px 0 0;padding:11px 14px;border-top:1px solid rgba(255,255,255,.14);border-radius:0 0 10px 10px;color:rgba(255,255,255,.82);font-weight:600;font-size:13.5px;text-decoration:none}
-.navadmin[hidden]{display:none}
+.navadmin[hidden],.navadm[hidden]{display:none}
+.navadm{margin-top:6px;border-top:1px solid rgba(255,255,255,.14)}
+.navadm .navadmin{margin:0;border-top:0;border-radius:10px}
 .navadmin .ic{width:18px;text-align:center;font-size:13px}
 .navadmin .nl{white-space:nowrap}
 .navadmin small{margin-left:auto;white-space:nowrap;font-size:11px;font-weight:500;opacity:.7}
 .navadmin:hover{background:rgba(255,255,255,.08);color:#fff}
-@media (max-width:820px){.navadmin{justify-content:center;margin-top:4px;padding:8px 6px;font-size:12.5px}.navadmin small{margin-left:4px}}
+@media (max-width:820px){.navadm{display:grid;grid-template-columns:1fr 1fr;margin-top:4px}.navadmin{justify-content:center;margin-top:4px;padding:8px 6px;font-size:12.5px}.navadmin small{margin-left:4px}}
 .rkt{margin-top:4px}
 .kpi .lab:has(.st)::before{display:none}
 .vscroll{overflow-x:auto;min-width:0}
@@ -603,8 +605,8 @@ svg text{font-family:var(--f-ui)}
         <button class="navbtn" data-page="p2" id="nav-p2"><span class="ic" aria-hidden="true">↘</span>사직분석</button>
         <button class="navbtn" data-page="p3" id="nav-p3"><span class="ic" aria-hidden="true">▦</span>부서별 사직</button>
       </div>
-      <a class="navadmin" id="nav-admin" href="#" target="_blank" rel="noopener" hidden title="원본 시트 접근 권한이 있는 구글 계정만 열 수 있습니다"><span class="ic" aria-hidden="true">🔒</span><span class="nl">사직자 명단</span><small>관리자 ↗</small></a>
-      <script>addEventListener('DOMContentLoaded',function(){var u=(window.DASH_CONFIG||{}).ADMIN_URL,a=document.getElementById('nav-admin');if(u&&a){a.href=u;a.hidden=false;}});</script>
+      <div class="navadm" id="nav-adm" hidden><a class="navadmin" id="nav-placed" href="#" target="_blank" rel="noopener" title="원본 시트 접근 권한이 있는 구글 계정만 열 수 있습니다"><span class="ic" aria-hidden="true">🔒</span><span class="nl">발령 명단</span><small>관리자 ↗</small></a><a class="navadmin" id="nav-admin" href="#" target="_blank" rel="noopener" title="원본 시트 접근 권한이 있는 구글 계정만 열 수 있습니다"><span class="ic" aria-hidden="true">🔒</span><span class="nl">사직자 명단</span><small>관리자 ↗</small></a></div>
+      <script>addEventListener('DOMContentLoaded',function(){var u=(window.DASH_CONFIG||{}).ADMIN_URL,w=document.getElementById('nav-adm');if(u&&w){document.getElementById('nav-placed').href=u+'?view=placed';document.getElementById('nav-admin').href=u;w.hidden=false;}});</script>
     </nav>
     <div class="sscroll">
     <details class="fcard" id="fcard" open>
