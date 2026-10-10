@@ -384,7 +384,7 @@ body{background:var(--bg)}
   .side{display:contents}
   .side .navcard{position:sticky;top:var(--tbh,56px);z-index:22;box-shadow:0 6px 14px rgba(31,58,104,.28)}
   .navcard{padding:6px}
-  .navcard .navlist{grid-template-columns:repeat(3,1fr);width:auto}
+  .navcard .navlist{grid-template-columns:repeat(4,1fr);width:auto}
   .navcard .navbtn{flex-direction:column;gap:2px;padding:8px 4px;font-size:12.5px;text-align:center;justify-content:center}
   .side .navfoot{display:none}
   .main{padding-bottom:0}
@@ -575,7 +575,7 @@ svg text{font-family:var(--f-ui)}
   .app{grid-template-columns:1fr}
   .nav{position:fixed;inset:auto 0 0 0;top:auto;height:auto;z-index:20;flex-direction:row;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));border-right:0;border-top:1px solid var(--line)}
   .brand,.navfoot{display:none}
-  .navlist{grid-template-columns:repeat(3,1fr);width:100%}
+  .navlist{grid-template-columns:repeat(4,1fr);width:100%}
   .navbtn{flex-direction:column;gap:2px;padding:6px 4px;font-size:12px;text-align:center;justify-content:center}
   .navbtn .k{display:none}
   .main{padding-bottom:96px}
@@ -583,6 +583,33 @@ svg text{font-family:var(--f-ui)}
   .kpi .val{font-size:24px}
   .hb .row{grid-template-columns:minmax(56px,5.5rem) minmax(0,1fr) 4.8rem}
 }
+
+/* 교육과정 만족도 */
+.svtop{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.svsub{color:var(--ink2);font-size:13px}
+.upbtn{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:10px;background:var(--accent);color:#fff;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap}
+.upbtn small{font-weight:500;opacity:.85}
+.upbtn:hover{filter:brightness(1.08)}
+.svchips{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.svchips .fl{margin-right:6px;font-size:12.5px;font-weight:600;color:var(--ink2)}
+.svtrend{display:grid;gap:10px}
+.svtr{display:grid;grid-template-columns:7.5rem 3.2rem minmax(0,1fr) 3.4rem;gap:6px 10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
+.svtr.on{border-color:var(--accent);background:color-mix(in oklab,var(--accent) 5%,var(--surface))}
+.svtr b{grid-row:span 2}
+.svl{font-size:12px;color:var(--muted)}
+.sbar{display:block;height:10px;border-radius:5px;background:var(--sunk);overflow:hidden}
+.sbar i{display:block;height:100%;border-radius:5px}
+.svt td.heat{background:color-mix(in oklab,var(--accent) var(--p,0%),var(--surface));color:var(--ink);font-weight:600}
+.svt td.cur{outline:2px solid color-mix(in oklab,var(--accent) 45%,transparent);outline-offset:-2px}
+.svq td.l{white-space:normal;min-width:12rem}
+.svq tr.qlow td:not(.heat){color:var(--crit-ink,#b42318)}
+.lowtag,.hightag{display:inline-block;padding:0 6px;border-radius:6px;font-size:11px;font-weight:700;vertical-align:1px}
+.lowtag{background:color-mix(in oklab,var(--crit) 14%,var(--surface));color:var(--crit-ink,#b42318)}
+.hightag{background:color-mix(in oklab,var(--good,#16a34a) 14%,var(--surface));color:var(--good-ink,#166534)}
+.svq tr.qsum td{border-top:1.5px solid var(--line2)}
+.svnotes{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+.svnote{white-space:pre-line;font-size:13px;line-height:1.7;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--sunk)}
+@media (max-width:820px){.svnotes{grid-template-columns:1fr}.svtr{grid-template-columns:5.5rem 2.8rem minmax(0,1fr) 3rem}.upbtn{width:100%;justify-content:center}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -604,6 +631,7 @@ svg text{font-family:var(--f-ui)}
         <button class="navbtn" data-page="p1" id="nav-p1"><span class="ic" aria-hidden="true">▤</span>발령현황</button>
         <button class="navbtn" data-page="p2" id="nav-p2"><span class="ic" aria-hidden="true">↘</span>사직분석</button>
         <button class="navbtn" data-page="p3" id="nav-p3"><span class="ic" aria-hidden="true">▦</span>부서별 사직</button>
+        <button class="navbtn" data-page="p4" id="nav-p4"><span class="ic" aria-hidden="true">★</span><span class="dfull">교육과정 만족도</span><span class="dshort">교육만족도</span></button>
       </div>
       <div class="navadm" id="nav-adm" hidden><a class="navadmin" id="nav-placed" href="#" target="_blank" rel="noopener" title="원본 시트 접근 권한이 있는 구글 계정만 열 수 있습니다"><span class="ic" aria-hidden="true">🔒</span><span class="nl">발령 명단</span><small>관리자 ↗</small></a><a class="navadmin" id="nav-admin" href="#" target="_blank" rel="noopener" title="원본 시트 접근 권한이 있는 구글 계정만 열 수 있습니다"><span class="ic" aria-hidden="true">🔒</span><span class="nl">사직자 명단</span><small>관리자 ↗</small></a></div>
       <script>addEventListener('DOMContentLoaded',function(){var u=(window.DASH_CONFIG||{}).ADMIN_URL,w=document.getElementById('nav-adm');if(u&&w){document.getElementById('nav-placed').href=u+'?view=placed';document.getElementById('nav-admin').href=u;w.hidden=false;}});</script>
@@ -795,6 +823,7 @@ const PAGES = {
   p1: { t:'발령현황', s:'회차별 발령 규모와 부서 배치를 한눈에 확인합니다.' },
   p2: { t:'사직분석', s:'사직율, 사직 발생 시기, 선발 지표별 사직 경향을 봅니다.' },
   p3: { t:'부서별 사직분석', s:'부서별 올해 사직 현황을 전년도 사직율과 나란히 비교합니다.' },
+  p4: { t:'교육과정 만족도', s:'신규간호사 교육과정 설문 결과를 회차별로 분석합니다.' },
 };
 
 const cmp = items => `<span class="cmp">${items.map(([a, b]) => `<span>${a} <b class="num">${b}</b></span>`).join('')}${S.g !== 'all' || S.c !== 'all' ? '<span class="zero">전년도는 전체 기준</span>' : ''}</span>`;
@@ -1262,6 +1291,112 @@ function p3(){
 
 /* ---------- shell ---------- */
 const CACHE_KEY = 'nurse-dash-v1';
+
+/* ---------- 교육과정 만족도 (신규간호사 설문) ---------- */
+const SQ = [ // [영역, 문항 요약, 설문 문항]
+  ['교육과정 공유', '간호국 교육과정 이해', '간호국 신규간호사 교육과정에 대해 설명들었고 이해하고 있다.'],
+  ['사전교육', '사전교육 필요성', '사전평가 학습주제(근거기반 간호 실무지침, 감염예방 주사실무)는 안전한 간호업무수행을 위해 필요하다.'],
+  ['사전교육', '사전학습률 (%)', '간호국에서 지정한 사전평가 학습내용은 100% 중 몇 % 정도 학습하였습니까?'],
+  ['교육과정', '오리엔테이션', '입사 후 오리엔테이션은 병원 전반을 이해하는데 도움이 되었다.'],
+  ['교육과정', '직무교육 이론·실기 분배', '간호직무교육(집체교육)은 이론과 실기가 적절히 분배되었다.'],
+  ['교육과정', '직무교육의 부서업무 도움', '간호직무교육(집체교육)의 내용은 우리부서 업무를 수행하는데 도움이 되었다.'],
+  ['교육과정', '교육전담일 · 근무조별 정기업무', '교육전담일 교육시 근무조별(D, E, N) 정기업무를 익힐 수 있었다.'],
+  ['교육과정', '교육전담일 · 다빈도·주요업무', '교육전담일 교육시 다빈도·주요 간호업무를 익힐 수 있었다.'],
+  ['교육과정', '1:1 프리셉터 · 환자상태 파악', '1:1 프리셉터 교육을 통해 담당 환자의 건강상태와 간호문제를 파악하는데 도움이 되었다.'],
+  ['교육과정', '1:1 프리셉터 · 간호수행', '1:1 프리셉터 교육을 통해 담당 환자에게 필요한 간호를 수행하는데 도움이 되었다.'],
+  ['교육과정', '1:1 프리셉터 · 의사소통', '1:1 프리셉터 교육을 통해 환자, 보호자, 동료직원과의 소통방법을 배울 수 있었다.'],
+  ['교육과정', '독립 전 추가교육', '독립 전 추가 간호직무교육은 부족한 부분을 학습하고 업무에 적응하는데 도움이 되었다.'],
+  ['교육의 질', '업무표준화', '우리 부서의 간호사는 업무지침을 준수하며 표준화된 간호를 수행한다.'],
+  ['교육의 질', '업무수준 반영', '나의 업무수행도를 고려하여 업무수준에 맞는 교육이 이루어졌다.'],
+  ['교육의 질', '근거기반 교육', '간호실무근거에 기반하여 일관성있는 교육이 진행되었다.'],
+  ['교육의 질', 'checklist 기반 교육', '교육기간동안 checklist에 있는 내용을 충실히 교육받았다.'],
+  ['교육의 질', '교육자료 효과성', '제공받은 교육자료(신규간호사 지침서, 부서업무지침서, 동영상자료 등)는 업무를 익히는데 효과적이었다.'],
+  ['지지체계', '프리셉터', '프리셉터는 나의 간호업무수행을 관찰, 피드백, 지지하여 실무를 잘 수행할 수 있도록 돕는다.'],
+  ['지지체계', '부서원', '부서원들은 내가 업무에 잘 적응할 수 있도록 관심과 도움을 준다.'],
+  ['지지체계', '부서관리자', '부서관리자(파트장)는 격려, 업무조정, 문제해결, 코칭을 통해 적응하고 성장할 수 있도록 돕는다.'],
+  ['지지체계', '간호국 교육팀', '간호국 교육 관리자와 교육전담자로부터 관심과 지지, 조언을 받았다.'],
+  ['지지체계', '신뢰·안위', '나는 도움이 필요한 경우 동료들에게 도움을 요청할 수 있다.'],
+  ['자신감', '간호직 성장 기대', '내가 선택한 간호직에 도전정신을 가지고 간호사로서 성장할 것이라 기대한다.'],
+  ['자신감', '질적간호 학습노력', '담당 환자에게 질적 간호를 제공하기 위해 이론과 실무를 충실히 학습하고 노력한다.'],
+];
+const SAREAS = ['교육과정 공유', '사전교육', '교육과정', '교육의 질', '지지체계', '자신감'];
+const svLab = (c, short) => short ? `${+c.date.slice(5, 7)}월 발령` : `${c.date.slice(0, 4)}년 ${+c.date.slice(5, 7)}월 발령`;
+const sc2 = v => v == null ? '–' : v.toFixed(2);
+// 점수 칸 색: 4.3점 이하 옅게 → 5점 진하게 (5점 척도)
+const heat = v => v == null ? '' : `style="--p:${Math.round(Math.max(0, Math.min(1, (v - 4.3) / 0.7)) * 30)}%"`;
+function areaMean(c, a){ const ix = SQ.map((q, i) => i).filter(i => SQ[i][0] === a && i !== 2); const v = ix.map(i => c.q[i]).filter(x => x != null); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null; }
+function sbar(v, lo, hi, col){ const w = v == null ? 0 : Math.max(2, Math.min(100, (v - lo) / (hi - lo) * 100)); return `<span class="sbar"><i style="width:${w}%;background:${col}"></i></span>`; }
+
+function p4(){
+  const SV = A.survey, aurl = (window.DASH_CONFIG || {}).ADMIN_URL;
+  const up = aurl ? `<a class="upbtn" href="${aurl}?view=survey" target="_blank" rel="noopener" title="허용된 관리자만 올릴 수 있습니다">⬆ 설문 결과 파일 추가 <small>관리자 ↗</small></a>` : '';
+  const head = (sub) => `<div class="svtop"><div class="svsub">${sub}</div>${up}</div>`;
+  if (!SV || SV.error || !SV.cohorts || !SV.cohorts.length)
+    return `<div style="display:grid;gap:20px">${head('간호관리실 양식의 신규간호사 설문조사 결과 파일을 올리면 회차별로 분석합니다.')}<section class="panel w12 msg"><h2>등록된 설문 결과가 없습니다</h2><p>오른쪽 위 <b>설문 결과 파일 추가</b>에서 엑셀 파일을 올려 주세요.${SV && SV.error ? ' (' + esc(SV.error) + ')' : ''}</p></section></div>`;
+  let cs = SV.cohorts.filter(c => SB.y === 'all' || +c.date.slice(0, 4) === SB.y);
+  const yearNote = !cs.length ? `<div class="note">${SB.y}년 발령 회차의 설문 결과가 아직 없어 전체 회차를 표시합니다.</div>` : '';
+  if (!cs.length) cs = SV.cohorts;
+  const multiYear = new Set(cs.map(c => c.date.slice(0, 4))).size > 1;
+  const L = c => svLab(c, !multiYear);
+  const cur = cs.find(c => c.date === S.sv) || cs.at(-1), ci = cs.indexOf(cur), prev = ci > 0 ? cs[ci - 1] : null;
+  const N = cs.reduce((s, c) => s + c.n, 0), wavg = f => { let s = 0, n = 0; for (const c of cs){ const v = f(c); if (v != null){ s += v * c.n; n += c.n; } } return n ? s / n : null; };
+  const dl = (a, b, d = 2, unit = '') => a == null || b == null ? '' : `<span class="dl ${a - b >= 0 ? 'dn' : 'up'}">${a - b >= 0 ? '▲' : '▼'}${Math.abs(a - b).toFixed(d)}${unit}</span>`;
+  const chips = `<div class="svchips"><span class="fl">회차 선택</span>${cs.map(c => `<button class="chip" data-sv="${c.date}" aria-pressed="${c === cur}">${L(c)}</button>`).join('')}</div>`;
+  // 문항별 순위 (선택 회차)
+  const ranked = SQ.map((q, i) => ({ i, v: cur.q[i] })).filter(x => x.i !== 2 && x.v != null).sort((a, b) => a.v - b.v);
+  const low = new Set(ranked.slice(0, 3).map(x => x.i)), high = new Set(ranked.slice(-3).map(x => x.i));
+  const kpis = `<div class="kpis">
+    ${kpi(`평균 만족도 <small>(${L(cur)})</small>`, sc2(cur.overall), '/5', `${prev ? `${L(prev)} ${sc2(prev.overall)} ${dl(cur.overall, prev.overall)}` : ''} · 전체 평균 ${sc2(wavg(c => c.overall))}`)}
+    ${kpi('임상간호업무 수행도', cur.q[24] == null ? '–' : cur.q[24].toFixed(1), '/100', `${prev ? `${L(prev)} ${prev.q[24].toFixed(1)} ${dl(cur.q[24], prev.q[24], 1)}` : ''} · 스스로 평가한 점수`)}
+    ${kpi('설문 응답', cur.n, '명', `응답률 ${cur.target ? pct(cur.n / cur.target, 0) : '–'} · 발령 ${cur.placed ?? '–'}명 · 누적 응답 ${N}명`)}
+    ${kpi('사전학습률', cur.q[2] == null ? '–' : cur.q[2].toFixed(1), '%', `가장 낮은 문항: ${SQ[ranked[0].i][1]} ${sc2(ranked[0].v)}`)}
+  </div>`;
+  // 회차별 추이
+  const trend = `<section class="panel w7"><div class="ph"><div><h2>회차별 만족도·수행도</h2><p>만족도 = 객관 23문항 평균(3번 사전학습률 제외, 5점 척도) · 수행도 = 스스로 평가한 임상간호업무 수행 정도(100점)</p></div></div>
+    <div class="svtrend">${cs.map(c => `<div class="svtr${c === cur ? ' on' : ''}" data-tip="${L(c)} · 응답 ${c.n}명\n만족도 ${sc2(c.overall)} / 5\n수행도 ${c.q[24] == null ? '–' : c.q[24].toFixed(1)} / 100\n설문시기 ${esc(c.period || '–')}">
+      <b>${L(c)}</b><span class="svl">만족도</span>${sbar(c.overall, 4, 5, 'var(--s1)')}<span class="num">${sc2(c.overall)}</span>
+      <span class="svl">수행도</span>${sbar(c.q[24], 0, 100, 'var(--s2)')}<span class="num">${c.q[24] == null ? '–' : c.q[24].toFixed(1)}</span></div>`).join('')}</div>
+    <div class="note">만족도 막대는 4.0~5.0점 구간을 확대해 표시합니다. 만족도에 비해 수행도가 낮게 나타나 독립 전후 현장 밀착 지원이 필요한지 함께 봅니다.</div></section>`;
+  // 영역별
+  const areas = `<section class="panel w5"><div class="ph"><div><h2>영역별 만족도</h2><p>영역에 속한 문항 평균 (5점)</p></div></div>
+    <div class="tw"><table class="mt svt"><thead><tr><th>영역</th>${cs.map(c => `<th class="num">${L(c)}</th>`).join('')}</tr></thead><tbody>
+    ${SAREAS.map(a => `<tr><td><b>${a}</b></td>${cs.map(c => { const v = areaMean(c, a); return `<td class="num heat${c === cur ? ' cur' : ''}" ${heat(v)}>${sc2(v)}</td>`; }).join('')}</tr>`).join('')}
+    </tbody></table></div></section>`;
+  // 문항별
+  const items = `<section class="panel w12"><div class="ph"><div><h2>문항별 만족도</h2><p>칸 색이 진할수록 높은 점수 · <span class="lowtag">하위 3</span> <span class="hightag">상위 3</span>은 ${L(cur)} 기준 · 5점 비율 = '매우 그렇다' 응답 비율</p></div></div>
+    <div class="tw"><table class="mt svt svq"><thead><tr><th>No</th><th class="l">영역</th><th class="l">문항</th>${cs.map(c => `<th class="num">${L(c)}</th>`).join('')}<th class="num">${L(cur)}<br>5점 비율</th></tr></thead><tbody>
+    ${SQ.map(([a, s, full], i) => `<tr class="${low.has(i) ? 'qlow' : high.has(i) ? 'qhigh' : ''}" data-tip="${i + 1}. ${esc(full)}"><td class="num">${i + 1}</td><td class="l">${a}</td><td class="l">${s}${low.has(i) ? ' <span class="lowtag">하위</span>' : high.has(i) ? ' <span class="hightag">상위</span>' : ''}</td>
+      ${cs.map(c => i === 2 ? `<td class="num">${c.q[2] == null ? '–' : c.q[2].toFixed(1) + '%'}</td>` : `<td class="num heat${c === cur ? ' cur' : ''}" ${heat(c.q[i])}>${sc2(c.q[i])}</td>`).join('')}
+      <td class="num">${i === 2 || cur.top[i] == null ? '–' : pct(cur.top[i], 0)}</td></tr>`).join('')}
+    <tr class="qsum"><td></td><td colspan="2" class="l"><b>객관문항 평균</b></td>${cs.map(c => `<td class="num"><b>${sc2(c.overall)}</b></td>`).join('')}<td></td></tr>
+    <tr class="qsum"><td class="num">25</td><td colspan="2" class="l"><b>임상간호업무 수행도 (100점)</b></td>${cs.map(c => `<td class="num"><b>${c.q[24] == null ? '–' : c.q[24].toFixed(1)}</b></td>`).join('')}<td></td></tr>
+    </tbody></table></div></section>`;
+  // 부서군별 (응답 3명 미만 비공개)
+  const dkeys = Object.keys(SV.depts);
+  const dept = `<section class="panel w5"><div class="ph"><div><h2>근무부서별 만족도</h2><p>${L(cur)} · 응답 ${SV.minN}명 미만 부서는 개인이 드러나지 않도록 숨김</p></div></div>
+    <div class="tw"><table class="mt svt"><thead><tr><th>근무부서</th><th class="num">응답</th><th class="num">만족도</th><th class="num">수행도</th></tr></thead><tbody>
+    ${dkeys.filter(k => cur.dept[k] && cur.dept[k][0] > 0).map(k => { const [n, m, p] = cur.dept[k]; return `<tr><td><b>${SV.depts[k]}</b></td><td class="num">${n}명</td>${m == null ? `<td class="num zero" colspan="2">${SV.minN}명 미만 비공개</td>` : `<td class="num heat" ${heat(m)}>${sc2(m)}</td><td class="num">${p == null ? '–' : p.toFixed(1)}</td>`}</tr>`; }).join('')}
+    </tbody></table></div><div class="note">28번 문항(현재 근무부서) 응답 기준입니다.</div></section>`;
+  // 주관식: 주제별 건수
+  const theme = (title, sub, key, extra, w) => {
+    const ks = Object.keys(cur[key]).sort((a, b) => cur[key][b] - cur[key][a]);
+    const max = Math.max(1, ...ks.map(k => cur[key][k]));
+    return `<section class="panel ${w || 'w4'}"><div class="ph"><div><h2>${title}</h2><p>${sub}</p></div></div>
+      ${hbars(ks.map(k => ({ label: k, v: cur[key][k], vl: `${cur[key][k]}건`, n: undefined, tip: `${k}\n${cs.map(c => `${L(c)} ${c[key][k] ?? 0}건 (응답 ${c.n}명 중 ${pct((c[key][k] ?? 0) / c.n, 0)})`).join('\n')}` })), { max })}
+      ${extra || ''}</section>`;
+  };
+  const help = theme('업무 적응에 도움이 된 교육', `26번 주관식 · ${L(cur)} 응답 ${cur.n}명 · 한 응답에 여러 주제가 있으면 각각 1건 · 원문은 공개하지 않음`, 'help', '', 'w6');
+  const opin = theme('교육과정 전반 의견 주제', `27번 주관식 · ${L(cur)} · 막대에 마우스를 올리면 회차별 건수`, 'opin', `<div class="note">의견 없음·마침표만 입력한 응답 ${cur.opinBlank}건 제외</div>`, 'w6');
+  // 총평
+  const notes = `<section class="panel w7"><div class="ph"><div><h2>간호교육팀 총평 및 개선</h2><p>${L(cur)} · 설문시기 ${esc(cur.period || '–')} · 설문 결과 파일의 '총평 및 개선안' 내용</p></div></div>
+    ${(cur.notes || []).length ? `<div class="svnotes">${cur.notes.map(t => `<div class="svnote">${esc(t)}</div>`).join('')}</div>` : '<p class="zero">총평이 없습니다.</p>'}</section>`;
+  return `<div style="display:grid;gap:20px">
+    ${head(`신규간호사 교육과정 설문(간호관리실 양식) · 등록 ${SV.cohorts.length}개 회차 · 누적 응답 ${N}명`)}
+    ${yearNote}${chips}${kpis}
+    <div class="grid">${trend}${areas}${items}${help}${opin}${dept}${notes}</div>
+  </div>`;
+}
+
 function navSync(){
   const pg = PAGES[S.page];
   document.getElementById('pt').textContent = pg.t;
@@ -1320,6 +1455,13 @@ function filters(){
   const okQ = new Set(periodList('quarter').map(x => x.key)), okM = new Set(periodList('month').map(x => x.key));
   const chip = (attr, val, label, on, dis) => `<button class="chip" ${attr}="${val}" aria-pressed="${on}" ${dis ? 'disabled' : ''}>${label}</button>`;
   const deps = S.g === 'all' ? [] : (GROUPS.find(g => g[0] === S.g)?.[1] || []);
+  if (S.page === 'p4'){
+    const svYears = [...new Set(((A.survey && A.survey.cohorts) || []).map(c => +c.date.slice(0, 4)).concat(years))].sort();
+    box.innerHTML = `<div class="fs"><span class="fl">기준일시</span><div class="cg">${chip('data-sy', 'all', '전체', SB.y === 'all')}${svYears.map(y => chip('data-sy', y, `${y}년`, SB.y === y)).join('')}</div></div>
+      <p class="fhint">교육과정 만족도는 <b>발령 연도</b> 기준입니다. 회차는 본문 위쪽에서 고릅니다.</p>`;
+    const fs = document.getElementById('f-sum'); if (fs) fs.textContent = SB.y === 'all' ? '전체 연도' : SB.y + '년';
+    return;
+  }
   box.innerHTML = `
     <div class="fs"><span class="fl">기준일시</span><div class="cg">${chip('data-sy', 'all', '전체', SB.y === 'all')}${years.map(y => chip('data-sy', y, `${y}년`, SB.y === y)).join('')}</div></div>
     <div class="fs"><span class="fl">분기</span><div class="cg">${chip('data-sq', 'all', '전체', !SB.q.length)}${[0, 1, 2, 3].map(q => chip('data-sq', q, `${q + 1}분기`, SB.q.includes(q), !okQ.has(`quarter-${Y}-${q * 3}`))).join('')}</div></div>
@@ -1353,13 +1495,14 @@ function render(){
     S.d = 'all';
     v.innerHTML = `<div class="note dnote"><b>${keep}</b> 자체 누적: 발령 ${p}명 · 사직 ${r}명 · 사직율 ${pct(p ? r / p : NaN)}<br>사직 시점·사유 분석은 개인이 드러나지 않도록 소속 부서군(<b>${S.g}</b>) 기준으로 표시합니다.</div>` + p2();
     S.d = keep;
-  } else v.innerHTML = ({ p1, p2, p3 })[S.page]();
+  } else v.innerHTML = ({ p1, p2, p3, p4 })[S.page]();
   const sv = document.getElementById('surv'); if (sv) survival(sv);
   calc();
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('button,th[data-sort],[data-pk]'); if (!b || b.disabled) return;
   if (b.dataset.page){ S.page = b.dataset.page; history.replaceState(null, '', '#' + S.page); render(); window.scrollTo({ top: 0 }); }
+  else if (b.dataset.sv){ S.sv = b.dataset.sv; render(); }
   else if (b.dataset.fc){ S.c = b.dataset.fc; render(); }
   else if (b.dataset.fg){ S.g = b.dataset.fg; S.d = 'all'; S.need = S.erate = undefined; render(); }
   else if (b.dataset.sy){ SB.y = b.dataset.sy === 'all' ? 'all' : +b.dataset.sy; syncPS(); render(); }

@@ -40,7 +40,7 @@ function doGet(e) {
   if (prm.api) return adminApi_(prm); // 2) 데이터 통로 (소유자 권한 배포에서만 쓰임)
   // 1) 명단 화면: 접속한 사람의 이메일 확인과 데이터 통로 호출에 필요한 권한만 요청
   ScriptApp.requireScopes(ScriptApp.AuthMode.FULL, ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/script.external_request']);
-  const view = prm.view === 'placed' ? 'placed' : 'resign';
+  const view = prm.view === 'placed' ? 'placed' : prm.view === 'survey' ? 'survey' : 'resign';
   let who = '';
   try { who = Session.getActiveUser().getEmail(); } catch (x) {}
   let data = null, err = '';
@@ -51,9 +51,9 @@ function doGet(e) {
   }
   const self = ADMIN.SELF_URL;
   const month = (e && e.parameter && e.parameter.m) || '';
-  const html = view === 'placed' ? placedPage_(data, err, who, self) : page_(data, err, month, who, self);
+  const html = view === 'placed' ? placedPage_(data, err, who, self) : view === 'survey' ? surveyPage_(data, err, who, self) : page_(data, err, month, who, self);
   return HtmlService.createHtmlOutput(html)
-    .setTitle(view === 'placed' ? ADMIN.PLACED_TITLE : ADMIN.TITLE)
+    .setTitle(view === 'placed' ? ADMIN.PLACED_TITLE : view === 'survey' ? '교육과정 만족도 · 설문 결과 등록' : ADMIN.TITLE)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
@@ -77,7 +77,7 @@ function adminApi_(prm) {
   if (!key || prm.key !== key) return json({ error: '접근 키가 맞지 않습니다.' });
   try {
     if (!isAllowed_(String(prm.email || ''))) return json({ error: 'NOT_ALLOWED' });
-    return json({ data: prm.view === 'placed' ? readPlaced_() : readResigned_() });
+    return json({ data: prm.view === 'placed' ? readPlaced_() : prm.view === 'survey' ? listSurvey_() : readResigned_() });
   } catch (x) {
     return json({ error: String(x && x.message || x) });
   }
@@ -597,5 +597,256 @@ const KIT = {
     KIT.draw();
   },
 };
+`;
+}
+
+/* ---------- 교육과정 만족도: 설문 결과 파일 업로드 (관리자) ---------- */
+const SURVEY_SHEETS = {
+  RESP: '교육만족도_응답',
+  COH: '교육만족도_회차',
+  RESP_HEAD: ['발령일', '번호'].concat(Array.from({ length: 25 }, (_, i) => 'Q' + (i + 1))).concat(['Q26 도움된 교육', 'Q27 의견', 'Q28 근무부서', '등록일시']),
+  COH_HEAD: ['발령일', '발령인원', '설문대상', '응답자', '설문시기', '총평1', '총평2', '총평3', '총평4', '파일명', '등록일시', '등록자'],
+};
+
+// 명단 화면(접속자 권한)에서 google.script.run으로 부르는 함수: 데이터 통로에 저장을 요청
+function saveSurvey(survey) {
+  let who = '';
+  try { who = Session.getActiveUser().getEmail(); } catch (x) {}
+  if (!who) throw new Error('구글 계정 이메일을 확인할 수 없습니다.');
+  const props = PropertiesService.getScriptProperties();
+  const res = UrlFetchApp.fetch(props.getProperty('ADMIN_API_URL'), {
+    method: 'post', contentType: 'application/json', muteHttpExceptions: true, followRedirects: true,
+    payload: JSON.stringify({ key: props.getProperty('ADMIN_API_KEY'), email: who, action: 'saveSurvey', survey: survey }),
+  });
+  let out;
+  try { out = JSON.parse(res.getContentText()); } catch (x) { throw new Error('저장 응답을 읽지 못했습니다. (응답 ' + res.getResponseCode() + ')'); }
+  if (out.error) throw new Error(out.error === 'NOT_ALLOWED' ? '업로드가 허용되지 않은 계정입니다.' : out.error);
+  return out.ok;
+}
+
+// 데이터 통로(소유자 권한) POST: 저장 요청 처리
+function doPost(e) {
+  const json = o => ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+  let body;
+  try { body = JSON.parse(e.postData.contents); } catch (x) { return json({ error: '잘못된 요청입니다.' }); }
+  const key = PropertiesService.getScriptProperties().getProperty('ADMIN_API_KEY');
+  if (!key || body.key !== key) return json({ error: '접근 키가 맞지 않습니다.' });
+  try {
+    if (!isAllowed_(String(body.email || ''))) return json({ error: 'NOT_ALLOWED' });
+    if (body.action === 'saveSurvey') return json({ ok: saveSurveyRows_(body.survey, body.email) });
+    return json({ error: '알 수 없는 요청입니다.' });
+  } catch (x) {
+    return json({ error: String(x && x.message || x) });
+  }
+}
+
+function surveySheet_(ss, name, head) {
+  let sh = ss.getSheetByName(name);
+  if (!sh) { sh = ss.insertSheet(name); sh.getRange(1, 1, 1, head.length).setValues([head]).setFontWeight('bold'); sh.setFrozenRows(1); }
+  return sh;
+}
+
+// 같은 발령일 회차가 이미 있으면 교체, 없으면 추가
+function saveSurveyRows_(s, email) {
+  if (!s || !s.meta || !/^\d{4}-\d{2}-\d{2}$/.test(String(s.meta.date || ''))) throw new Error('발령일을 확인할 수 없습니다.');
+  if (!Array.isArray(s.resp) || !s.resp.length) throw new Error('응답 자료가 없습니다.');
+  const date = s.meta.date;
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const ss = SpreadsheetApp.openById(ADMIN.SHEET_ID);
+    const now = Utilities.formatDate(new Date(), ADMIN.TZ, 'yyyy-MM-dd HH:mm');
+    const shR = surveySheet_(ss, SURVEY_SHEETS.RESP, SURVEY_SHEETS.RESP_HEAD);
+    const shC = surveySheet_(ss, SURVEY_SHEETS.COH, SURVEY_SHEETS.COH_HEAD);
+    const keep = (sh, w) => { const v = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, w).getValues() : []; return v.filter(r => ymd_(r[0]) !== date); };
+    const clean = v => (v == null ? '' : v);
+    const rows = keep(shR, SURVEY_SHEETS.RESP_HEAD.length).concat(s.resp.map(r => [date, clean(r.no)]
+      .concat(Array.from({ length: 25 }, (_, i) => clean(r.q[i]))).concat([String(r.q26 || ''), String(r.q27 || ''), clean(r.q28), now])));
+    const cohs = keep(shC, SURVEY_SHEETS.COH_HEAD.length);
+    const n = (s.meta.notes || []).concat(['', '', '', '']).slice(0, 4);
+    cohs.push([date, clean(s.meta.placed), clean(s.meta.target), clean(s.meta.resp || s.resp.length), String(s.meta.period || '')].concat(n).concat([String(s.meta.file || ''), now, email]));
+    const sortByDate = (a, b) => (ymd_(a[0]) < ymd_(b[0]) ? -1 : ymd_(a[0]) > ymd_(b[0]) ? 1 : 0);
+    rows.sort(sortByDate); cohs.sort(sortByDate);
+    const write = (sh, v, w) => {
+      if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, w).clearContent();
+      if (v.length) { sh.getRange(2, 1, v.length, 1).setNumberFormat('@'); sh.getRange(2, 1, v.length, w).setValues(v.map(r => [ymd_(r[0])].concat(r.slice(1)))); }
+    };
+    write(shR, rows, SURVEY_SHEETS.RESP_HEAD.length);
+    write(shC, cohs, SURVEY_SHEETS.COH_HEAD.length);
+    return { date: date, n: s.resp.length, cohorts: cohs.length };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// 등록된 회차 목록 (업로드 화면 표시용)
+function listSurvey_() {
+  const sh = SpreadsheetApp.openById(ADMIN.SHEET_ID).getSheetByName(SURVEY_SHEETS.COH);
+  if (!sh || sh.getLastRow() < 2) return { cohorts: [] };
+  return { cohorts: sh.getRange(2, 1, sh.getLastRow() - 1, SURVEY_SHEETS.COH_HEAD.length).getDisplayValues()
+    .filter(r => r[0]).map(r => ({ date: ymd_(r[0]), placed: r[1], target: r[2], resp: r[3], period: r[4], file: r[9], at: r[10], by: r[11] })) };
+}
+
+function surveyPage_(data, err, who, self) {
+  const json = JSON.stringify({ data: data, err: err, who: who, dash: ADMIN.DASHBOARD_URL.replace('#p2', '#p4') }).replace(/</g, '\\u003c');
+  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>교육과정 만족도 · 설문 결과 등록</title>
+<style>
+${adminCss_()}
+.drop{border:2px dashed var(--line2);border-radius:14px;padding:26px;text-align:center;color:var(--ink2);background:#fafbfd;cursor:pointer}
+.drop.on{border-color:var(--accent);background:var(--soft)}
+.drop b{color:var(--accent)}
+.pv td,.pv th{font-size:13px}
+.okmsg{color:#15803d;font-weight:600}.bad{color:var(--crit);font-weight:600}
+.steps{margin:0;padding-left:18px;color:var(--ink2);font-size:13px;line-height:1.8}
+</style></head><body>
+<header><h1><i>+</i>교육과정 만족도 · 설문 결과 등록 <span class="tag">관리자 전용</span></h1>${viewTabs_(self, '')}
+<div class="hr"><a class="btn home" id="dash" target="_top">← 메인 대시보드</a><span id="who"></span></div></header>
+<main id="app"></main>
+<script>
+const P = ${json};
+${tableKit_()}
+${xlsxReader_()}
+if (P.err || !P.data) { renderErr(); } else {
+  let parsed = [];
+  const draw = (msg) => {
+    const have = P.data.cohorts.map(c => c.date);
+    app.innerHTML = '<div class="card"><ol class="steps"><li>간호관리실 양식의 <b>신규간호사 설문조사 결과 엑셀 파일</b>(.xlsx)을 고릅니다. 여러 개를 한 번에 골라도 됩니다.</li><li>아래 미리보기에서 발령일·응답자 수를 확인합니다.</li><li><b>저장</b>을 누르면 대시보드의 교육과정 만족도에 반영됩니다. 같은 발령일 회차가 있으면 새 파일로 바뀝니다.</li></ol></div>'
+      + '<label class="drop card" id="drop"><input type="file" id="f" accept=".xlsx" multiple hidden><b>파일 선택</b> 또는 여기에 끌어다 놓기</label>'
+      + (parsed.length ? '<div class="card tw"><table class="pv"><thead><tr><th>파일</th><th>발령일</th><th>발령인원</th><th>응답자</th><th>평균 만족도</th><th>임상수행도</th><th>상태</th></tr></thead><tbody>'
+        + parsed.map((p, i) => p.error ? '<tr><td class="l">' + esc(p.file) + '</td><td colspan="6" class="bad">' + esc(p.error) + '</td></tr>'
+          : '<tr><td class="l">' + esc(p.meta.file) + '</td><td>' + dot(p.meta.date) + '</td><td>' + (p.meta.placed || '–') + '명</td><td>' + p.resp.length + '명</td><td>' + p.avg.toFixed(2) + '</td><td>' + p.perf.toFixed(1) + '</td><td>' + (p.saved ? '<span class="okmsg">저장됨</span>' : have.includes(p.meta.date) ? '기존 회차 교체' : '새 회차') + '</td></tr>').join('')
+        + '</tbody></table><div class="tb" style="margin-top:12px"><span class="muted">' + (msg || '') + '</span><span class="tbb"><button class="btn" id="save"' + (parsed.some(p => !p.error && !p.saved) ? '' : ' disabled') + '>저장</button></span></div></div>' : '')
+      + '<div class="card tw"><b>등록된 회차</b><table style="margin-top:8px"><thead><tr><th>발령일</th><th>발령인원</th><th>응답자</th><th>설문시기</th><th class="l">파일</th><th>등록</th></tr></thead><tbody>'
+      + (P.data.cohorts.length ? P.data.cohorts.map(c => '<tr><td>' + dot(c.date) + '</td><td>' + esc(c.placed) + '</td><td>' + esc(c.resp) + '</td><td>' + esc(c.period) + '</td><td class="l">' + esc(c.file) + '</td><td class="muted">' + esc(c.at) + ' · ' + esc(c.by) + '</td></tr>').join('') : '<tr><td colspan="6" class="empty">아직 없습니다.</td></tr>')
+      + '</tbody></table></div>';
+  };
+  const take = async files => {
+    parsed = [];
+    for (const f of files) {
+      try { const r = await parseSurveyFile(f); parsed.push(r); } catch (e) { parsed.push({ file: f.name, error: String(e.message || e) }); }
+    }
+    draw();
+  };
+  app.addEventListener('change', e => { if (e.target.id === 'f') take([...e.target.files]); });
+  app.addEventListener('dragover', e => { const d = e.target.closest('#drop'); if (d) { e.preventDefault(); d.classList.add('on'); } });
+  app.addEventListener('dragleave', e => { const d = e.target.closest('#drop'); if (d) d.classList.remove('on'); });
+  app.addEventListener('drop', e => { const d = e.target.closest('#drop'); if (d) { e.preventDefault(); take([...e.dataTransfer.files].filter(f => /\\.xlsx$/i.test(f.name))); } });
+  app.addEventListener('click', e => {
+    if (e.target.id !== 'save') return;
+    e.target.disabled = true;
+    const todo = parsed.filter(p => !p.error && !p.saved);
+    const next = () => {
+      const p = todo.shift();
+      if (!p) { draw('저장을 마쳤습니다. 대시보드에는 최대 5분 안에 반영됩니다.'); return; }
+      draw(dot(p.meta.date) + ' 회차 저장 중…');
+      google.script.run.withSuccessHandler(() => {
+        p.saved = true;
+        if (!P.data.cohorts.some(c => c.date === p.meta.date)) P.data.cohorts.push({ date: p.meta.date, placed: p.meta.placed, resp: p.resp.length, period: p.meta.period, file: p.meta.file, at: '방금', by: P.who });
+        P.data.cohorts.sort((a, b) => a.date < b.date ? -1 : 1);
+        next();
+      }).withFailureHandler(err => { p.error = '저장 실패: ' + (err && err.message || err); draw(); }).saveSurvey({ meta: p.meta, resp: p.resp });
+    };
+    next();
+  });
+  draw();
+}
+</script></body></html>`;
+}
+
+// 브라우저에서 xlsx를 읽는 코드 (외부 라이브러리 없이 압축 해제 → 시트 XML 읽기)
+function xlsxReader_() {
+  return String.raw`
+async function readXlsx(file) {
+  const buf = new Uint8Array(await file.arrayBuffer()), dv = new DataView(buf.buffer);
+  let e = buf.length - 22; while (e >= 0 && dv.getUint32(e, true) !== 0x06054b50) e--;
+  if (e < 0) throw new Error('엑셀(.xlsx) 파일이 아닙니다.');
+  const cnt = dv.getUint16(e + 10, true); let p = dv.getUint32(e + 16, true);
+  const ent = {}, td = new TextDecoder();
+  for (let i = 0; i < cnt; i++) {
+    const nl = dv.getUint16(p + 28, true), el = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true);
+    ent[td.decode(buf.subarray(p + 46, p + 46 + nl))] = { m: dv.getUint16(p + 10, true), size: dv.getUint32(p + 20, true), off: dv.getUint32(p + 42, true) };
+    p += 46 + nl + el + cl;
+  }
+  const get = async name => {
+    const f = ent[name]; if (!f) return null;
+    const s = f.off + 30 + dv.getUint16(f.off + 26, true) + dv.getUint16(f.off + 28, true), data = buf.subarray(s, s + f.size);
+    if (f.m === 0) return td.decode(data);
+    const out = await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
+    return td.decode(out);
+  };
+  const X = s => new DOMParser().parseFromString(s, 'application/xml');
+  const wb = X(await get('xl/workbook.xml')), rels = X(await get('xl/_rels/workbook.xml.rels'));
+  const target = {}; [...rels.getElementsByTagName('Relationship')].forEach(r => { target[r.getAttribute('Id')] = r.getAttribute('Target'); });
+  const ssx = await get('xl/sharedStrings.xml');
+  const strs = ssx ? [...X(ssx).getElementsByTagName('si')].map(si => [...si.getElementsByTagName('t')].map(t => t.textContent).join('')) : [];
+  const sheets = {};
+  for (const sh of wb.getElementsByTagName('sheet')) {
+    const rid = sh.getAttribute('r:id') || sh.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+    let t = target[rid] || ''; t = t.startsWith('/') ? t.slice(1) : 'xl/' + t;
+    sheets[sh.getAttribute('name')] = t;
+  }
+  const col = ref => { let n = 0; for (const ch of ref.replace(/\d+/g, '')) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
+  const readSheet = async name => {
+    const doc = X(await get(sheets[name])), rows = [];
+    for (const c of doc.getElementsByTagName('c')) {
+      const ref = c.getAttribute('r'), r = parseInt(ref.replace(/[A-Z]+/g, ''), 10) - 1, k = col(ref), t = c.getAttribute('t');
+      const v = c.getElementsByTagName('v')[0];
+      let val = null;
+      if (t === 's') val = v ? strs[+v.textContent] : null;
+      else if (t === 'inlineStr') val = [...c.getElementsByTagName('t')].map(x => x.textContent).join('');
+      else if (t === 'str' || t === 'b' || t === 'e') val = v ? v.textContent : null;
+      else if (v) { const n = Number(v.textContent); val = isNaN(n) ? v.textContent : n; }
+      (rows[r] = rows[r] || [])[k] = val;
+    }
+    return rows;
+  };
+  return { names: Object.keys(sheets), readSheet: readSheet };
+}
+
+// 간호관리실 양식의 신규간호사 설문 결과 파일 → { meta, resp, avg, perf }
+async function parseSurveyFile(file) {
+  const book = await readXlsx(file);
+  const rawName = book.names.find(n => /rawdata/i.test(n));
+  if (!rawName) throw new Error("'설문조사 결과(rawdata …)' 시트를 찾을 수 없습니다.");
+  const rows = await book.readSheet(rawName);
+  let hi = -1, c1 = -1;
+  for (let i = 0; i < Math.min(rows.length, 15) && hi < 0; i++) {
+    const s = (rows[i] || []).map(v => v == null ? '' : String(v).trim());
+    for (let j = 0; j < s.length - 2; j++) if (s[j] === '1' && s[j + 1] === '2' && s[j + 2] === '3') { hi = i; c1 = j; break; }
+  }
+  if (hi < 0) throw new Error('문항 번호(1, 2, 3 …) 머리글 행을 찾을 수 없습니다.');
+  const num = v => typeof v === 'number' ? v : (v != null && String(v).trim() !== '' && !isNaN(Number(v)) ? Number(v) : null);
+  const resp = [];
+  for (const r of rows.slice(hi + 1)) {
+    if (!r) continue;
+    const seq = r[c1 - 1];
+    if (typeof seq !== 'number' || !Number.isInteger(seq)) continue;
+    const q = Array.from({ length: 25 }, (_, k) => num(r[c1 + k]));
+    if (q.slice(0, 24).some((v, i) => i !== 2 && v == null)) continue;
+    resp.push({ no: seq, q, q26: String(r[c1 + 25] ?? '').trim(), q27: String(r[c1 + 26] ?? '').trim(), q28: num(r[c1 + 27]) });
+  }
+  if (!resp.length) throw new Error('응답 행을 찾을 수 없습니다.');
+  const meta = { date: '', placed: null, target: null, resp: resp.length, period: '', notes: [], file: file.name };
+  const sumName = book.names.find(n => /총평/.test(n));
+  if (sumName) {
+    const texts = Array.from(await book.readSheet(sumName), r => (r && r[0] != null) ? String(r[0]) : '');
+    for (const t of texts) {
+      let m = t.match(/발령일자.*?:\s*(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\S*\s*\/\s*(\d+)\s*명/);
+      if (m) { meta.date = m[1] + '-' + String(m[2]).padStart(2, '0') + '-' + String(m[3]).padStart(2, '0'); meta.placed = +m[4]; }
+      m = t.match(/설문시기\s*:\s*(.+)/); if (m) meta.period = m[1].trim();
+      m = t.match(/설문인원.*?:\s*(\d+)\s*명\s*중\s*(\d+)\s*명/); if (m) { meta.target = +m[1]; meta.resp = +m[2]; }
+    }
+    const st = texts.findIndex((t, i) => i > 5 && t.includes('총평 및 개선'));
+    if (st >= 0) meta.notes = texts.slice(st + 1).map(t => t.trim()).filter(t => t && !t.startsWith('#')).slice(0, 4);
+  }
+  if (!meta.date) {
+    const m = String(rows[0] && rows[0][0] || file.name).match(/(\d{4})\D+(\d{1,2})\s*월?\s*발령/);
+    if (m) meta.date = m[1] + '-' + String(m[2]).padStart(2, '0') + '-01';
+  }
+  if (!meta.date) throw new Error('발령일을 찾을 수 없습니다 (총평 시트의 발령일자 줄 확인).');
+  const items = [0, 1].concat(Array.from({ length: 21 }, (_, i) => i + 3));
+  const avg = resp.reduce((s, x) => s + items.reduce((a, i) => a + x.q[i], 0) / items.length, 0) / resp.length;
+  const pv = resp.map(x => x.q[24]).filter(v => v != null);
+  return { meta, resp, avg, perf: pv.length ? pv.reduce((a, b) => a + b, 0) / pv.length : 0 };
+}
 `;
 }

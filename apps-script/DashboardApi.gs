@@ -150,6 +150,7 @@ function buildDashboardData_() {
       return [p[0], p[1], p[2], p[3], Number(p[4]), Number(p[5]), res[k]];
     }),
     prev: readPrevRates_(ss),
+    survey: (function () { try { return readSurvey_(ss); } catch (e) { return { error: String(e && e.message || e) }; } })(),
   };
 }
 
@@ -236,4 +237,78 @@ function rate_(v) {
   if (typeof v === 'number') return v > 1 ? v / 100 : v;
   const x = parseFloat(String(v).replace('%', ''));
   return isNaN(x) ? null : x / 100;
+}
+
+/* ---------- 교육과정 만족도 (신규간호사 설문) ----------
+ * 원자료는 시트의 '교육만족도_응답'·'교육만족도_회차' 탭 (관리자 업로드 화면에서 저장)
+ * 대시보드에는 집계값만 보낸다: 문항 평균·5점 비율, 부서군별 평균(응답 3명 이상), 주관식은 주제별 건수만 (원문은 보내지 않음)
+ */
+const SURVEY = {
+  RESP_SHEET: '교육만족도_응답',
+  COH_SHEET: '교육만족도_회차',
+  MIN_N: 3, // 부서군별 평균은 응답자 3명 이상일 때만 공개
+  DEPTS: { 1: '일반병동', 2: '간호간병통합병동', 3: '중환자실', 4: '수술실·마취회복실', 5: '응급실', 6: '기타' },
+  // 26번 '업무 적응에 도움이 된 교육' 주제 (한 응답에 여러 주제가 나오면 각각 1건)
+  HELP: [
+    ['전산교육', /전산|인피스|inphis|emr|오더|fee/i],
+    ['술기·실습', /술기|실습|실기|set|세트|펌프|pump|infusion|인퓨전|석션|중심정맥|도뇨|모형|물품|배액|플루이드|line|벤트|vent/i],
+    ['1:1·대표 프리셉터', /프리셉터|프셉|프리샙터|preceptor/i],
+    ['집체·이론교육', /집체|이론|강의|지침서|사전|간담회/i],
+    ['교육전담·현장지도', /교육\s*선생님|전담|현장\s*교육|현장지도|독립\s*후|찾아와/i],
+    ['독립 전 추가교육', /추가\s*교육|추가교육|8\s*to\s*5/i],
+    ['투약·약물', /투약|약물|인슐린|항암|항생제|수혈|주사|약품|케모/i],
+    ['업무흐름·환자파악', /흐름|환자\s*파악|노티|notify|입퇴원|보고|근무조|신환/i],
+    ['시술·수술 준비', /시술|수술|검사|검체/i],
+  ],
+  // 27번 '교육과정 전반 의견' 주제
+  OPIN: [
+    ['교육·프리셉터 기간 확대 요청', /길었으면|늘려|늘렸|늘리|더\s*길|연장|기간.{0,6}(더|조금|부족)|3개월|더 교육|더 자주|더 많이 필요|더 했으면/],
+    ['부서·현장 실무교육 확대', /부서|현장|병동\s*내|실무|수술방|수술실|회복실/],
+    ['전산교육 요구', /전산|emr|인피스/i],
+    ['교육자료 형식 개선', /pdf|출력|강의록/i],
+    ['체계적·만족', /체계|만족|좋|유익|알차|도움|뜻깊/],
+    ['감사 표현', /감사/],
+  ],
+};
+
+function readSurvey_(ss) {
+  const shR = ss.getSheetByName(SURVEY.RESP_SHEET), shC = ss.getSheetByName(SURVEY.COH_SHEET);
+  if (!shR || !shC) return null;
+  const meta = {};
+  shC.getDataRange().getValues().slice(1).forEach(r => {
+    const d = ymd_(r[0]); if (!d) return;
+    meta[d.s] = { date: d.s, placed: Number(r[1]) || null, target: Number(r[2]) || null, resp: Number(r[3]) || null, period: String(r[4] || ''),
+      notes: [r[5], r[6], r[7], r[8]].map(v => String(v || '').trim()).filter(Boolean) };
+  });
+  const by = {};
+  shR.getDataRange().getValues().slice(1).forEach(r => {
+    const d = ymd_(r[0]); if (!d) return;
+    const q = r.slice(2, 27).map(v => (v === '' || v == null || isNaN(Number(v))) ? null : Number(v));
+    if (q.slice(0, 24).filter((v, i) => i !== 2 && v == null).length) return;
+    (by[d.s] = by[d.s] || []).push({ q: q, help: String(r[27] || ''), opin: String(r[28] || ''), dept: Number(r[29]) || 0 });
+  });
+  const ITEMS = [0, 1].concat(Array.from({ length: 21 }, (_, i) => i + 3)); // 1·2번, 4~24번 (3번 자가학습률 제외) = 23문항
+  const mean = a => a.length ? a.reduce((s, v) => s + v, 0) / a.length : null;
+  const overall = x => mean(ITEMS.map(i => x.q[i]));
+  const r3 = v => v == null ? null : Math.round(v * 1000) / 1000;
+  const cohorts = Object.keys(by).sort().map(date => {
+    const rs = by[date];
+    const q = Array.from({ length: 25 }, (_, i) => r3(mean(rs.map(x => x.q[i]).filter(v => v != null))));
+    const top = Array.from({ length: 24 }, (_, i) => i === 2 ? null : r3(rs.filter(x => x.q[i] === 5).length / rs.length));
+    const dept = {};
+    Object.keys(SURVEY.DEPTS).forEach(k => {
+      const g = rs.filter(x => x.dept === Number(k));
+      dept[k] = g.length >= SURVEY.MIN_N ? [g.length, r3(mean(g.map(overall))), r3(mean(g.map(x => x.q[24]).filter(v => v != null)))] : [g.length, null, null];
+    });
+    const count = (rules, field) => {
+      const o = {}; rules.forEach(([k]) => { o[k] = 0; });
+      rs.forEach(x => rules.forEach(([k, re]) => { if (re.test(x[field])) o[k]++; }));
+      return o;
+    };
+    const blank = rs.filter(x => x.opin.replace(/[\s.\-ㅡ­_]/g, '').length < 2 || /^(없음|없다|없습니다)$/.test(x.opin.trim())).length;
+    return Object.assign({ date: date, n: rs.length, q: q, top: top, overall: r3(mean(rs.map(overall))), dept: dept,
+      help: count(SURVEY.HELP, 'help'), opin: count(SURVEY.OPIN, 'opin'), opinBlank: blank },
+      meta[date] || { date: date, notes: [] }, { n: rs.length });
+  });
+  return { cohorts: cohorts, depts: SURVEY.DEPTS, minN: SURVEY.MIN_N };
 }
